@@ -1,0 +1,60 @@
+﻿/vendor/
+/node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Laravel generated files
+/storage/*.key
+/storage/app/*
+!/storage/app/.gitignore
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/framework/profile_*/
+/storage/logs/*
+!/storage/logs/.gitignore
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+# Frontend build output
+/public/build/
+/public/hot
+
+# Test and tooling cache
+/.phpunit.cache/
+/.pest/
+/coverage/
+
+# Local IDE/editor files
+/.idea/
+/.vscode/
+/.kiro/
+*.code-workspace
+
+# OS and crash files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.stackdump
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Browser automation profiles
+/storage/framework/crawl_profile_*/
+/storage/framework/puppeteer_profile_*/
