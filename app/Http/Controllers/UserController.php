@@ -53,12 +53,12 @@ class UserController extends Controller
             'roles' => ['nullable', 'array'],
             'roles.*' => ['exists:roles,id'],
         ], [
-            'name.required' => 'Nama lengkap wajib diisi 👤',
-            'email.required' => 'Email wajib diisi ✉️',
-            'email.email' => 'Format email tidak valid ✉️',
-            'email.unique' => 'Email ini sudah terdaftar ✉️',
-            'password.required' => 'Password wajib diisi 🔑',
-            'password.min' => 'Password minimal terdiri dari 8 karakter 🔑',
+            'name.required' => 'Nama lengkap wajib diisi',
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
+            'email.unique' => 'Email ini sudah terdaftar',
+            'password.required' => 'Password wajib diisi',
+            'password.min' => 'Password minimal terdiri dari 8 karakter',
         ]);
 
         $user = User::create([
@@ -75,7 +75,7 @@ class UserController extends Controller
         }
 
         return redirect()->route('users.index')
-            ->with('success', 'User ' . $user->name . ' berhasil dibuat! 👤✨');
+            ->with('success', 'User ' . $user->name . ' berhasil dibuat!');
     }
 
     /**
@@ -100,10 +100,10 @@ class UserController extends Controller
             'roles' => ['nullable', 'array'],
             'roles.*' => ['exists:roles,id'],
         ], [
-            'name.required' => 'Nama lengkap wajib diisi 👤',
-            'email.required' => 'Email wajib diisi ✉️',
-            'email.email' => 'Format email tidak valid ✉️',
-            'email.unique' => 'Email ini sudah terdaftar ✉️',
+            'name.required' => 'Nama lengkap wajib diisi',
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
+            'email.unique' => 'Email ini sudah terdaftar',
         ]);
 
         $user->name = $request->name;
@@ -122,7 +122,7 @@ class UserController extends Controller
         }
 
         return redirect()->route('users.index')
-            ->with('success', 'Informasi user ' . $user->name . ' berhasil diperbarui! 👤⚙️');
+            ->with('success', 'Informasi user ' . $user->name . ' berhasil diperbarui!');
     }
 
     /**
@@ -133,13 +133,13 @@ class UserController extends Controller
         // Security guard: prevent deleting current user
         if ($user->id === auth()->id()) {
             return redirect()->route('users.index')
-                ->with('error', 'Keamanan Terjaga: Anda tidak diperbolehkan menghapus akun Anda sendiri! 🚫🛡️');
+                ->with('error', 'Keamanan Terjaga: Anda tidak diperbolehkan menghapus akun Anda sendiri!');
         }
 
         $userName = $user->name;
         $user->delete();
 
         return redirect()->route('users.index')
-            ->with('success', 'User ' . $userName . ' berhasil dihapus dari sistem! 🗑️👋');
+            ->with('success', 'User ' . $userName . ' berhasil dihapus dari sistem!');
     }
 }

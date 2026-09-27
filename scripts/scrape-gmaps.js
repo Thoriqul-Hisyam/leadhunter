@@ -1,232 +1,146 @@
-import puppeteer from 'puppeteer';
+import { launchBrowser, newPage, crawlForContacts, isSocialUrl, delay } from './lib/browser.js';
 
+// Pemakaian: node scripts/scrape-gmaps.js "<niche> <lokasi>" [maxResults]
+// Output (stdout):
+//   LEAD_ROW:{...}   satu baris per bisnis, dicetak segera agar Laravel bisa menyimpan real-time
+//   SUMMARY:{...}    ringkasan di akhir
+// Exit code != 0 jika scraping gagal total (browser tidak bisa dibuka, Google Maps tidak bisa diakses, dll).
 (async () => {
     const query = process.argv[2];
-    if (!query) { console.log('[]'); process.exit(0); }
+    const maxResults = Math.max(1, Math.min(parseInt(process.argv[3] || '100', 10) || 100, 200));
 
-    let browser;
+    if (!query) {
+        console.error('Query kosong.');
+        process.exitCode = 1;
+        return;
+    }
+
+    let session = null;
+    let found = 0;
+
     try {
-        const path = await import('path');
-        const { fileURLToPath } = await import('url');
-        const __dirname = path.dirname(fileURLToPath(import.meta.url));
+        session = await launchBrowser();
+        const page = await newPage(session.browser);
 
-        // Use a 100% unique profile folder for every request to avoid collisions
-        const uniqueProfile = path.join(__dirname, '../storage/framework/profile_' + Date.now() + '_' + Math.floor(Math.random() * 10000));
-        
-        let launchOptions = {
-            headless: 'new',
-            userDataDir: uniqueProfile,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
-        };
-
-        const fs = await import('fs');
-        const defaultChromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-        if (fs.existsSync(defaultChromePath)) {
-            launchOptions.executablePath = defaultChromePath;
-        }
-
-        browser = await puppeteer.launch(launchOptions);
-
-        const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        await page.setViewport({ width: 1280, height: 900 });
-
-        // Go to Google Maps search
-        await page.goto(`https://www.google.com/maps/search/${encodeURIComponent(query)}`, {
-            waitUntil: 'domcontentloaded', timeout: 60000
+        await page.goto(`https://www.google.com/maps/search/${encodeURIComponent(query)}?hl=id`, {
+            waitUntil: 'domcontentloaded',
+            timeout: 60000,
         });
 
-        // Handle cookie consent if appears
+        // Tutup dialog persetujuan cookie jika muncul.
         try {
             const btn = await page.$('button[aria-label="Accept all"], button[aria-label="Terima semua"]');
             if (btn) { await btn.click(); await delay(2000); }
-        } catch(e) {}
+        } catch (e) {}
 
-        // Wait for results to show up
         try {
             await page.waitForSelector('a[href*="/maps/place/"]', { timeout: 15000 });
-        } catch(e) {}
+        } catch (e) {}
         await delay(2000);
 
-        // Scroll the results panel to load more items
+        // Scroll panel hasil untuk memuat lebih banyak tempat.
+        const scrolls = Math.ceil(maxResults / 7);
         try {
-            await page.evaluate(async () => {
-                const scrollableDiv = document.querySelector('div[role="feed"]');
-                if (scrollableDiv) {
-                    for (let i = 0; i < 15; i++) { // Scroll 15 kali untuk memuat ~100 data
-                        scrollableDiv.scrollBy(0, 2000);
-                        await new Promise(r => setTimeout(r, 1500));
-                    }
+            await page.evaluate(async (times) => {
+                const feed = document.querySelector('div[role="feed"]');
+                if (!feed) return;
+                for (let i = 0; i < times; i++) {
+                    feed.scrollBy(0, 2000);
+                    await new Promise((r) => setTimeout(r, 1500));
+                    if (document.body.innerText.includes('Anda telah mencapai akhir daftar') || document.body.innerText.includes("You've reached the end of the list")) break;
                 }
-            });
-        } catch(e) {}
+            }, scrolls);
+        } catch (e) {}
 
-        // Collect result links from the list
-        const resultLinks = await page.evaluate(() => {
-            const links = document.querySelectorAll('a[href*="/maps/place/"]');
+        const resultLinks = await page.evaluate((limit) => {
             const seen = new Set();
             const out = [];
-            for (const a of links) {
+            for (const a of document.querySelectorAll('a[href*="/maps/place/"]')) {
                 const label = a.getAttribute('aria-label');
-                const href = a.href;
                 if (label && !seen.has(label)) {
                     seen.add(label);
-                    out.push({ name: label, href });
+                    out.push({ name: label, href: a.href });
                 }
             }
-            return out.slice(0, 100); // Maksimal 100 leads sekali scrape
-        });
+            return out.slice(0, limit);
+        }, maxResults);
 
-        const results = [];
+        // Satu halaman tempat langsung (query sangat spesifik) tidak punya daftar hasil.
+        if (resultLinks.length === 0 && page.url().includes('/maps/place/')) {
+            resultLinks.push({ name: '', href: page.url() });
+        }
 
-        // Click each result to get details
-        for (let i = 0; i < resultLinks.length; i++) {
+        if (resultLinks.length === 0) {
+            console.error('Tidak ada hasil di Google Maps (mungkin diblokir/CAPTCHA atau query tidak ditemukan).');
+        }
+
+        for (const link of resultLinks) {
             try {
-                await page.goto(resultLinks[i].href, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                await page.goto(link.href, { waitUntil: 'domcontentloaded', timeout: 30000 });
                 await delay(2000);
 
                 const detail = await page.evaluate(() => {
-                    const getText = (sel) => {
+                    const text = (sel) => {
                         const el = document.querySelector(sel);
                         return el?.textContent?.trim() || el?.getAttribute('aria-label')?.replace(/^.*?:\s*/, '') || null;
                     };
-                    const getHref = (sel) => {
-                        const el = document.querySelector(sel);
-                        return el?.href || null;
-                    };
 
-                    // Business name from h1
                     const name = document.querySelector('h1')?.textContent?.trim() || '';
+                    const address = text('button[data-item-id="address"]');
 
-                    // Address
-                    const address = getText('button[data-item-id="address"]');
-
-                    // Phone
-                    let phone = getText('button[data-item-id^="phone"]');
+                    let phone = text('button[data-item-id^="phone"]');
                     if (phone) phone = phone.replace(/[^0-9+\-\s()]/g, '').trim();
 
-                    // Website
-                    const website = getHref('a[data-item-id="authority"]');
+                    const website = document.querySelector('a[data-item-id="authority"]')?.href || null;
+                    const category = document.querySelector('button[jsaction*="category"]')?.textContent?.trim() || null;
 
-                    // Category
-                    const category = document.querySelector('button[jsaction*="category"]')?.textContent?.trim() || '';
+                    let rating = null;
+                    const ratingText = document.querySelector('div.F7nice span[aria-hidden="true"]')?.textContent
+                        || document.querySelector('span[role="img"][aria-label*="bintang"], span[role="img"][aria-label*="stars"]')?.getAttribute('aria-label');
+                    if (ratingText) {
+                        const m = ratingText.match(/\d+[.,]\d/);
+                        if (m) rating = parseFloat(m[0].replace(',', '.'));
+                    }
 
-                    // Try to find an email address in the visible text
-                    const bodyText = document.body.innerText;
-                    const emailMatch = bodyText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-                    const email = emailMatch ? emailMatch[0] : null;
+                    let reviewsCount = null;
+                    const reviewLabel = Array.from(document.querySelectorAll('div.F7nice span[aria-label]'))
+                        .map((s) => s.getAttribute('aria-label'))
+                        .find((l) => /\d/.test(l) && /(ulasan|review)/i.test(l));
+                    if (reviewLabel) reviewsCount = parseInt(reviewLabel.replace(/\D/g, ''), 10) || null;
 
-                    return { name, address, phone, website, category, email };
+                    const emailMatch = document.body.innerText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+
+                    return { name, address, phone, website, category, rating, reviews_count: reviewsCount, email: emailMatch ? emailMatch[0] : null };
                 });
 
-                if (detail.name) {
-                    let email = detail.email;
-                    let phone = detail.phone;
-                    
-                    // If email or phone is missing, and we have a valid website, crawl it!
-                    if ((!email || !phone) && detail.website) {
-                        const isSocial = ['instagram.com', 'facebook.com', 'linktr.ee', 'wa.me', 'twitter.com', 'tiktok.com', 'bit.ly', 'youtube.com', 'google.com'].some(d => detail.website.includes(d));
-                        if (!isSocial) {
-                            let webPage = null;
-                            try {
-                                webPage = await browser.newPage();
-                                await webPage.setRequestInterception(true);
-                                webPage.on('request', (req) => {
-                                    if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
-                                        req.abort();
-                                    } else {
-                                        req.continue();
-                                    }
-                                });
-                                
-                                let currentUrl = detail.website.startsWith('http') ? detail.website : `https://${detail.website}`;
-                                await webPage.goto(currentUrl, { waitUntil: 'domcontentloaded', timeout: 12000 });
-                                
-                                const extractData = async (wp) => {
-                                    return await wp.evaluate(() => {
-                                        const clone = document.body.cloneNode(true);
-                                        clone.querySelectorAll('script, style, svg, link, iframe').forEach(el => el.remove());
-                                        const text = clone.innerText || '';
-                                        const html = clone.innerHTML || '';
-                                        
-                                        const emailMatches = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
-                                        const cleanEmails = Array.from(new Set(emailMatches)).filter(e => {
-                                            const ext = e.split('.').pop().toLowerCase();
-                                            return !['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(ext);
-                                        });
-                                        
-                                        const telLinks = Array.from(document.querySelectorAll('a[href^="tel:"]'))
-                                            .map(a => a.getAttribute('href').replace('tel:', '').trim())
-                                            .filter(t => t.length > 5);
-                                            
-                                        const textMatches = text.match(/(?:\+62|62|0)(?:\s|-|\.)*(?:\d(?:\s|-|\.)*){8,13}/g) || [];
-                                        const cleanPhones = textMatches.map(p => p.replace(/[^0-9+]/g, '').trim())
-                                            .filter(p => p.length >= 9 && p.length <= 15 && (p.startsWith('0') || p.startsWith('+62') || p.startsWith('62')));
-                                            
-                                        return {
-                                            emails: cleanEmails,
-                                            phones: Array.from(new Set([...telLinks, ...cleanPhones])),
-                                            contactLinks: Array.from(document.querySelectorAll('a'))
-                                                .map(a => ({ href: a.href, text: a.innerText.toLowerCase() }))
-                                                .filter(l => l.href && (l.text.includes('contact') || l.text.includes('hubungi') || l.text.includes('about') || l.text.includes('tentang') || l.href.includes('contact') || l.href.includes('hubungi') || l.href.includes('about')))
-                                                .map(l => l.href)
-                                        };
-                                    });
-                                };
-                                
-                                let homepageData = await extractData(webPage);
-                                if (!email && homepageData.emails.length > 0) email = homepageData.emails[0];
-                                if (!phone && homepageData.phones.length > 0) phone = homepageData.phones[0];
-                                
-                                // If still missing either, check first contact page
-                                if ((!email || !phone) && homepageData.contactLinks.length > 0) {
-                                    const firstContactLink = Array.from(new Set(homepageData.contactLinks))[0];
-                                    if (firstContactLink && firstContactLink !== currentUrl) {
-                                        try {
-                                            await webPage.goto(firstContactLink, { waitUntil: 'domcontentloaded', timeout: 10000 });
-                                            let contactPageData = await extractData(webPage);
-                                            if (!email && contactPageData.emails.length > 0) email = contactPageData.emails[0];
-                                            if (!phone && contactPageData.phones.length > 0) phone = contactPageData.phones[0];
-                                        } catch (contactErr) {}
-                                    }
-                                }
-                            } catch (webErr) {
-                                // ignore website crawl errors
-                            } finally {
-                                if (webPage) {
-                                    await webPage.close();
-                                }
-                            }
-                        }
+                if (!detail.name) continue;
+
+                detail.google_maps_url = page.url().split('?')[0];
+
+                // Cari email/telepon yang belum ada langsung dari website bisnisnya.
+                if ((!detail.email || !detail.phone) && detail.website && !isSocialUrl(detail.website)) {
+                    try {
+                        const contacts = await crawlForContacts(session.browser, detail.website, { timeout: 12000, maxSubpages: 1 });
+                        detail.email = detail.email || contacts.email;
+                        detail.phone = detail.phone || contacts.phone;
+                    } catch (e) {
+                        // website tidak bisa dibuka: lanjut tanpa kontak tambahan
                     }
-                    
-                    detail.email = email;
-                    detail.phone = phone;
-                    results.push(detail);
-                    
-                    // Print lead immediately to stdout for real-time Laravel storage
-                    console.log("LEAD_ROW:" + JSON.stringify(detail));
                 }
-            } catch(e) {
-                // skip this result
+
+                found++;
+                console.log('LEAD_ROW:' + JSON.stringify(detail));
+            } catch (e) {
+                // lewati tempat ini
             }
         }
 
-        console.log(JSON.stringify(results));
-    } catch(e) {
+        console.log('SUMMARY:' + JSON.stringify({ links: resultLinks.length, found }));
+    } catch (e) {
         console.error(e.message);
-        console.log('[]');
+        console.log('SUMMARY:' + JSON.stringify({ found, error: e.message }));
+        process.exitCode = 1;
     } finally {
-        if (browser) {
-            await browser.close();
-            try {
-                const fs = await import('fs');
-                if (typeof uniqueProfile !== 'undefined') {
-                    fs.rmSync(uniqueProfile, { recursive: true, force: true });
-                }
-            } catch (e) {}
-        }
+        if (session) await session.close();
     }
 })();
-
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }

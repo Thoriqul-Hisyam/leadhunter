@@ -32,5 +32,10 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="AI_API_KEY" value=""/>
+        <env name="GROQ_API_KEY" value=""/>
+        <env name="AI_RETRIES" value="0"/>
+        <env name="IMAP_ENABLED" value="false"/>
+        <env name="SCRAPER_DRIVER" value="puppeteer"/>
     </php>
 </phpunit>

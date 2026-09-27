@@ -1,7 +1,11 @@
 <?php
 
-test('the application returns a successful response', function () {
-    $response = $this->get('/');
+test('guests are redirected to the login page', function () {
+    $this->get('/')->assertRedirect(route('login'));
+});
 
-    $response->assertStatus(200);
+test('the dashboard returns a successful response for logged in users', function () {
+    loginAs();
+
+    $this->get('/')->assertOk()->assertSee('Outreach 30 Hari Terakhir');
 });

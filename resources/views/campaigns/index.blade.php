@@ -38,6 +38,7 @@
                     <th>Campaign</th>
                     <th>Target Niche</th>
                     <th>Target Location</th>
+                    <th>Pesan · Terkirim · Dibalas</th>
                     <th>Created</th>
                     <th class="text-right">Actions</th>
                 </tr>
@@ -64,6 +65,12 @@
                             </svg>
                             <span>{{ $campaign->location }}</span>
                         </span>
+                    </td>
+                    <td class="text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                        {{ $campaign->outreach_messages_count }} · {{ $campaign->delivered_count }} · <strong>{{ $campaign->replied_count }}</strong>
+                        @if($campaign->delivered_count)
+                            <span class="text-[10px] text-slate-400">({{ round($campaign->replied_count / $campaign->delivered_count * 100, 1) }}%)</span>
+                        @endif
                     </td>
                     <td class="text-slate-500 dark:text-slate-400 text-sm">{{ $campaign->created_at->format('M d, Y') }}</td>
                     <td>
@@ -93,7 +100,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5">
+                    <td colspan="6">
                         <div class="empty-state py-12">
                             <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                                 <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

@@ -39,10 +39,10 @@ class RoleController extends Controller
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['exists:permissions,id'],
         ], [
-            'name.required' => 'Nama role wajib diisi 🛡️',
-            'slug.required' => 'Slug role wajib diisi 🔑',
-            'slug.alpha_dash' => 'Slug hanya boleh berisi huruf, angka, strip, dan underscore 🔑',
-            'slug.unique' => 'Slug ini sudah terdaftar 🔑',
+            'name.required' => 'Nama role wajib diisi',
+            'slug.required' => 'Slug role wajib diisi',
+            'slug.alpha_dash' => 'Slug hanya boleh berisi huruf, angka, strip, dan underscore',
+            'slug.unique' => 'Slug ini sudah terdaftar',
         ]);
 
         $role = Role::create([
@@ -56,7 +56,7 @@ class RoleController extends Controller
         }
 
         return redirect()->route('roles.index')
-            ->with('success', 'Role ' . $role->name . ' berhasil ditambahkan! 🛡️✨');
+            ->with('success', 'Role ' . $role->name . ' berhasil ditambahkan!');
     }
 
     /**
@@ -77,7 +77,7 @@ class RoleController extends Controller
         // Security checks: protect admin/user core role slugs from changing
         if (in_array($role->slug, ['admin', 'user']) && $request->slug !== $role->slug) {
             return back()->withErrors([
-                'slug' => 'Slug untuk role bawaan sistem (admin/user) tidak boleh diubah! 🛡️🔒'
+                'slug' => 'Slug untuk role bawaan sistem (admin/user) tidak boleh diubah!'
             ]);
         }
 
@@ -88,10 +88,10 @@ class RoleController extends Controller
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['exists:permissions,id'],
         ], [
-            'name.required' => 'Nama role wajib diisi 🛡️',
-            'slug.required' => 'Slug role wajib diisi 🔑',
-            'slug.alpha_dash' => 'Slug hanya boleh berisi huruf, angka, strip, dan underscore 🔑',
-            'slug.unique' => 'Slug ini sudah terdaftar 🔑',
+            'name.required' => 'Nama role wajib diisi',
+            'slug.required' => 'Slug role wajib diisi',
+            'slug.alpha_dash' => 'Slug hanya boleh berisi huruf, angka, strip, dan underscore',
+            'slug.unique' => 'Slug ini sudah terdaftar',
         ]);
 
         $role->name = $request->name;
@@ -106,7 +106,7 @@ class RoleController extends Controller
         }
 
         return redirect()->route('roles.index')
-            ->with('success', 'Role ' . $role->name . ' berhasil diperbarui! 🛡️⚙️');
+            ->with('success', 'Role ' . $role->name . ' berhasil diperbarui!');
     }
 
     /**
@@ -117,13 +117,13 @@ class RoleController extends Controller
         // Security guard: prevent deleting default admin/user roles
         if (in_array($role->slug, ['admin', 'user'])) {
             return redirect()->route('roles.index')
-                ->with('error', 'Keamanan Terjaga: Role bawaan sistem (' . $role->name . ') tidak boleh dihapus! 🛡️🔒');
+                ->with('error', 'Keamanan Terjaga: Role bawaan sistem (' . $role->name . ') tidak boleh dihapus!');
         }
 
         $roleName = $role->name;
         $role->delete();
 
         return redirect()->route('roles.index')
-            ->with('success', 'Role ' . $roleName . ' berhasil dihapus dari sistem! 🗑️🛡️');
+            ->with('success', 'Role ' . $roleName . ' berhasil dihapus dari sistem!');
     }
 }

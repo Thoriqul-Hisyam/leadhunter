@@ -110,7 +110,7 @@
                                         <form action="{{ route('roles.destroy', $role->id) }}" method="POST" class="inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" onclick="return handleConfirm(event, this.form, 'Hapus Role 🛡️', 'Apakah Anda yakin ingin menghapus role {{ $role->name }} dari sistem? Ini akan melepaskan hak akses dari semua user terkait.', 'Hapus Role')"
+                                            <button type="submit" onclick="return handleConfirm(event, this.form, 'Hapus Role', 'Apakah Anda yakin ingin menghapus role {{ $role->name }} dari sistem? Ini akan melepaskan hak akses dari semua user terkait.', 'Hapus Role')"
                                                 class="text-rose-600 dark:text-rose-400 hover:underline cursor-pointer border-0 bg-transparent flex items-center gap-1 font-semibold">
                                                 <span>Hapus</span
                                             </button>
@@ -127,7 +127,7 @@
                         <tr>
                             <td colspan="5" class="py-8 px-4 text-center">
                                 <div class="flex flex-col items-center justify-center text-slate-400">
-                                    <span class="text-3xl mb-2">🔍</span>
+                                    <span class="mb-2 text-slate-300 dark:text-slate-600"><x-icon name="search" class="w-8 h-8" /></span>
                                     <span class="text-xs font-semibold">Tidak ada role terdaftar</span>
                                 </div>
                             </td>

@@ -61,7 +61,7 @@
             <div class="flex items-center gap-4">
                 <div class="relative flex items-center justify-center flex-shrink-0">
                     <div class="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent" style="animation: spin 1s linear infinite;"></div>
-                    <div class="absolute text-xs">📡</div>
+                    <div class="absolute text-indigo-500"><x-icon name="signal" class="w-3.5 h-3.5" /></div>
                 </div>
                 <div>
                     <h4 class="font-bold text-sm text-slate-900 dark:text-white">Scraping in progress...</h4>
@@ -95,17 +95,55 @@
             </div>
         </div>
         
-        <form action="{{ route('leads.index') }}" method="GET" class="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <label class="flex items-center justify-center gap-2 text-xs text-slate-700 dark:text-slate-300 font-semibold cursor-pointer whitespace-nowrap bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
-                <input type="checkbox" name="no_website" value="1" class="form-checkbox rounded border-slate-300 dark:border-slate-600 text-indigo-600 bg-slate-100 dark:bg-slate-700" {{ request('no_website') ? 'checked' : '' }} onchange="this.form.submit()">
-                <span>🚫 No Website</span>
-            </label>
-            <div class="flex gap-2 flex-1">
-                <input type="text" name="search" placeholder="Search leads..." value="{{ request('search') }}" class="form-input text-xs" style="width: auto;">
-                <button type="submit" class="btn-secondary py-1.5 px-4 text-xs">Search</button>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('leads.export', request()->only(['search', 'has_email', 'has_phone', 'has_website', 'no_website', 'stage'])) }}" class="btn-secondary py-1.5 px-3 text-xs font-bold" title="Export leads (sesuai filter) ke CSV"><x-icon name="download" class="w-3.5 h-3.5" /> Export CSV</a>
+            <button type="button" onclick="document.getElementById('import-panel').classList.toggle('hidden')" class="btn-secondary py-1.5 px-3 text-xs font-bold"><x-icon name="upload" class="w-3.5 h-3.5" /> Import CSV</button>
+        </div>
+    </div>
+
+    {{-- Import CSV --}}
+    <div id="import-panel" class="hidden mb-6 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/30">
+        <form action="{{ route('leads.import') }}" method="POST" enctype="multipart/form-data" class="flex flex-col md:flex-row gap-3 items-end">
+            @csrf
+            <div class="flex-1 w-full">
+                <label class="form-label text-xs">File CSV</label>
+                <input type="file" name="file" accept=".csv,text/csv" required class="form-input text-xs">
+                <p class="text-[10px] text-slate-500 mt-1">Header yang dikenali: business_name/nama, city/kota, niche, email, phone/telepon, website, address/alamat, category, rating. Pemisah koma atau titik koma.</p>
             </div>
+            <div class="w-full md:w-48">
+                <label class="form-label text-xs">Niche default</label>
+                <input type="text" name="default_niche" placeholder="mis. klinik gigi" class="form-input text-xs">
+            </div>
+            <div class="w-full md:w-48">
+                <label class="form-label text-xs">Kota default</label>
+                <input type="text" name="default_city" placeholder="jika kolom kota kosong" class="form-input text-xs">
+            </div>
+            <button type="submit" class="btn-primary py-2 px-4 text-xs font-bold">Import</button>
         </form>
     </div>
+
+    {{-- Filter --}}
+    <form action="{{ route('leads.index') }}" method="GET" class="mb-6 flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
+        <input type="text" name="search" placeholder="Cari nama, niche, kota, email..." value="{{ request('search') }}" class="form-input text-xs lg:w-64">
+        @foreach(['has_email' => 'Email', 'has_phone' => 'WA / Telepon', 'has_website' => 'Website'] as $field => $label)
+            <select name="{{ $field }}" onchange="this.form.submit()" class="form-input text-xs lg:w-auto">
+                <option value="">{{ $label }}: semua</option>
+                <option value="yes" @selected(request($field) === 'yes')>{{ $label }}: ada</option>
+                <option value="no" @selected(request($field) === 'no' || ($field === 'has_website' && request('no_website')))>{{ $label }}: tidak ada</option>
+            </select>
+        @endforeach
+        <select name="stage" onchange="this.form.submit()" class="form-input text-xs lg:w-auto">
+            <option value="">Stage: semua</option>
+            @foreach($stages as $value => $label)
+                <option value="{{ $value }}" @selected(request('stage') === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
+        <button type="submit" class="btn-secondary py-1.5 px-4 text-xs">Filter</button>
+        @if(array_filter($filters))
+            <a href="{{ route('leads.index') }}" class="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white px-2">Reset</a>
+        @endif
+        <span class="lg:ml-auto text-[11px] text-slate-500 dark:text-slate-400 font-semibold whitespace-nowrap">{{ number_format($leads->total()) }} lead</span>
+    </form>
 
     {{-- Bulk AI Actions Toolbar --}}
     <div id="bulk-actions-toolbar" class="hidden mb-6 p-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white border border-indigo-500/25 shadow-lg shadow-indigo-500/10 transition-all duration-300 transform scale-95 opacity-0 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -124,7 +162,7 @@
             <x-searchable-select name="campaign_id" 
                 form="bulk-outreach-form" 
                 required="true" 
-                placeholder="🚀 Choose Campaign..." 
+                placeholder="Pilih campaign..." 
                 :options="$campaigns->mapWithKeys(fn($c) => [$c->id => $c->name . ' (' . $c->niche . ')'])"
                 triggerClass="!bg-white/10 !text-white !border-white/20 focus:!bg-indigo-900/50 focus:!text-white !rounded-xl text-xs font-semibold h-[38px] min-w-[170px] [&_span]:truncate [&_svg]:!text-white/80" />
 
@@ -132,7 +170,7 @@
                 form="bulk-outreach-form" 
                 required="true" 
                 selected="email"
-                :options="['email' => '📧 Email', 'whatsapp' => '💬 WhatsApp']"
+                :options="['email' => 'Email', 'whatsapp' => 'WhatsApp']"
                 triggerClass="!bg-white/10 !text-white !border-white/20 focus:!bg-indigo-900/50 focus:!text-white !rounded-xl text-xs font-semibold h-[38px] min-w-[120px] [&_span]:truncate [&_svg]:!text-white/80" />
             <button type="submit" form="bulk-outreach-form" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-white text-indigo-700 font-bold text-xs hover:bg-slate-50 transition shadow-md flex items-center justify-center gap-1.5">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -156,7 +194,8 @@
                         <th>Business Name</th>
                         <th>Niche / City</th>
                         <th>Contact</th>
-                        <th>Source</th>
+                        <th>Rating</th>
+                        <th>Stage</th>
                         <th style="width: 120px; text-align: right; padding-right: 20px;">Actions</th>
                     </tr>
                 </thead>
@@ -167,7 +206,10 @@
                             <input type="checkbox" name="lead_ids[]" value="{{ $lead->id }}" form="bulk-outreach-form" class="lead-checkbox form-checkbox h-4.5 w-4.5 rounded text-indigo-600 border-slate-300 cursor-pointer">
                         </td>
                         <td>
-                            <div class="font-bold text-slate-900 dark:text-slate-100">{{ $lead->business_name }}</div>
+                            <a href="{{ route('leads.show', $lead) }}" class="font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ $lead->business_name }}</a>
+                            @if($lead->category)
+                                <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{{ $lead->category }}</div>
+                            @endif
                             @if($lead->address)
                                 <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-[200px]" title="{{ $lead->address }}">{{ $lead->address }}</div>
                             @endif
@@ -201,7 +243,7 @@
                                     </a>
                                 @endif
                                 @if($lead->website)
-                                    <a href="{{ $lead->website }}" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs font-semibold flex items-center gap-1 website-item">
+                                    <a href="{{ \App\Helpers\Url::normalize($lead->website) ?? '#' }}" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs font-semibold flex items-center gap-1 website-item">
                                         <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                                         </svg>
@@ -214,7 +256,18 @@
                             </div>
                         </td>
                         <td>
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">{{ $lead->source }}</span>
+                            @if($lead->rating)
+                                <div class="text-xs font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap inline-flex items-center gap-1"><x-icon name="star" class="w-3.5 h-3.5" /> {{ number_format($lead->rating, 1) }}</div>
+                                @if($lead->reviews_count)
+                                    <div class="text-[10px] text-slate-400">{{ number_format($lead->reviews_count) }} ulasan</div>
+                                @endif
+                            @else
+                                <span class="text-[10px] text-slate-400">—</span>
+                            @endif
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1 inline-block">{{ $lead->source }}</span>
+                        </td>
+                        <td>
+                            @include('leads.partials.stage-badge', ['stage' => $lead->pipeline_stage])
                         </td>
                         <td style="text-align: right; padding-right: 20px;">
                             <div class="flex items-center justify-end gap-1.5">
@@ -287,7 +340,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6">
+                        <td colspan="7">
                             <div class="empty-state py-12">
                                 <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                                     <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -848,7 +901,7 @@ function showToast(message, type = 'success') {
         
     toast.innerHTML = `
         ${icon}
-        <span class="text-xs font-semibold leading-relaxed">${message}</span>
+        <span class="text-xs font-semibold leading-relaxed">${window.escapeHtml(message)}</span>
         <button onclick="this.parentElement.remove()" class="ml-auto text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer border-0 bg-transparent flex items-center justify-center">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
@@ -882,7 +935,7 @@ window.crawlLeadWebsite = async function(btn, id) {
     `;
 
     try {
-        const response = await fetch(`/leads/${id}/crawl-website`, {
+        const response = await fetch(@js(url('leads')) + `/${id}/crawl-website`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -920,7 +973,7 @@ window.crawlLeadWebsite = async function(btn, id) {
                             <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
-                            <span class="email-value">${email}</span>
+                            <span class="email-value">${window.escapeHtml(email)}</span>
                         `;
                         if (webItem) {
                             contactList.insertBefore(newEmail, webItem);
@@ -945,7 +998,7 @@ window.crawlLeadWebsite = async function(btn, id) {
                             <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                             </svg>
-                            <span class="phone-value">${phone}</span>
+                            <span class="phone-value">${window.escapeHtml(phone)}</span>
                         `;
                         if (webItem) {
                             contactList.insertBefore(newPhone, webItem);

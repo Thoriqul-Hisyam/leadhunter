@@ -19,32 +19,37 @@ class RoleAndAdminSeeder extends Seeder
             [
                 'name' => 'Kelola Leads',
                 'slug' => 'manage_leads',
-                'description' => 'Mencari bisnis (scraping) dan merayap website untuk email/kontak bisnis 🌐',
+                'description' => 'Mencari bisnis (scraping) dan merayap website untuk email/kontak bisnis',
             ],
             [
                 'name' => 'Kelola Campaign',
                 'slug' => 'manage_campaigns',
-                'description' => 'Membuat, mengedit, dan mengelola target campaign outreach 🎯',
+                'description' => 'Membuat, mengedit, dan mengelola target campaign outreach',
             ],
             [
                 'name' => 'Kelola Template',
                 'slug' => 'manage_templates',
-                'description' => 'Mengelola master template outreach berdasarkan niche bisnis 📝',
+                'description' => 'Mengelola master template outreach berdasarkan niche bisnis',
             ],
             [
                 'name' => 'Kirim Outreach',
                 'slug' => 'send_outreach',
-                'description' => 'Mengirim pesan outreach real melalui email SMTP atau WhatsApp ✉️',
+                'description' => 'Mengirim pesan outreach real melalui email SMTP atau WhatsApp',
             ],
             [
                 'name' => 'Kelola Pengguna',
                 'slug' => 'manage_users',
-                'description' => 'Mengelola pendaftaran akun pengguna, CRUD user sistem 👤',
+                'description' => 'Mengelola pendaftaran akun pengguna, CRUD user sistem',
             ],
             [
                 'name' => 'Kelola Role & Akses',
                 'slug' => 'manage_roles',
-                'description' => 'Mengatur peran (roles) dan perizinan hak wewenang akses peran (permissions) 🛡️',
+                'description' => 'Mengatur peran (roles) dan perizinan hak wewenang akses peran (permissions)',
+            ],
+            [
+                'name' => 'Kelola Pengaturan',
+                'slug' => 'manage_settings',
+                'description' => 'Mengatur identitas pengirim, penawaran default, follow-up, dan blacklist',
             ],
         ];
 
@@ -64,12 +69,12 @@ class RoleAndAdminSeeder extends Seeder
             [
                 'name' => 'Administrator',
                 'slug' => 'admin',
-                'description' => 'Full access to system features, role configurations, and user accounts management 👑',
+                'description' => 'Full access to system features, role configurations, and user accounts management',
             ],
             [
                 'name' => 'User',
                 'slug' => 'user',
-                'description' => 'Standard access to lead scraping, email campaign pipelines, template builders, and outreach generators 👤',
+                'description' => 'Standard access to lead scraping, email campaign pipelines, template builders, and outreach generators',
             ],
         ];
 
@@ -106,7 +111,8 @@ class RoleAndAdminSeeder extends Seeder
             $adminUser = User::create([
                 'name' => 'Admin LeadHunter',
                 'email' => 'admin@leadhunter.com',
-                'password' => Hash::make('admin123'),
+                // Set ADMIN_PASSWORD di .env sebelum seeding di server production.
+                'password' => Hash::make(config('leadhunter.admin_password')),
                 'email_verified_at' => now(),
             ]);
         }

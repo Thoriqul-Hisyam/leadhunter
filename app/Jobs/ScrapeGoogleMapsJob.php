@@ -2,14 +2,17 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\ScrapeFailedException;
+use App\Models\ScrapingNotification;
+use App\Services\Scraping\LeadScraperService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Services\GoogleMapsScraperService;
-use App\Models\Lead;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Throwable;
 
 class ScrapeGoogleMapsJob implements ShouldQueue
 {
@@ -19,57 +22,52 @@ class ScrapeGoogleMapsJob implements ShouldQueue
     public $location;
 
     /**
-     * Set timeout job to 15 minutes to allow for large scraping tasks.
+     * Scraping tidak di-retry otomatis: percobaan ulang akan membuka Google Maps dari awal.
+     */
+    public $tries = 1;
+
+    /**
+     * Harus lebih besar dari SCRAPER_TIMEOUT (840 detik) dan lebih kecil dari DB_QUEUE_RETRY_AFTER.
      */
     public $timeout = 900;
+
+    public $failOnTimeout = true;
 
     public function __construct($niche, $location)
     {
         $this->niche = $niche;
         $this->location = $location;
+        $this->onQueue('scraping');
     }
 
-    public function handle(GoogleMapsScraperService $scraper): void
+    public function handle(LeadScraperService $scraper): void
     {
         Log::info("Starting background scrape for {$this->niche} in {$this->location}");
-        
-        $results = $scraper->scrape($this->niche, $this->location);
-        
-        $count = 0;
-        foreach ($results as $result) {
-            Lead::firstOrCreate(
-                ['business_name' => $result['business_name'], 'city' => $result['city']],
-                $result
-            );
-            $count++;
-        }
-        
-        Log::info("Background scrape completed. Inserted {$count} leads.");
 
-        // Create 'success' status notification in database
-        \App\Models\ScrapingNotification::create([
-            'niche' => $this->niche,
-            'location' => $this->location,
-            'type' => 'success',
-            'title' => 'Scraping Selesai',
-            'message' => "Scraping leads untuk niche \"{$this->niche}\" di kota \"{$this->location}\" selesai! Daftar leads diperbarui.",
-            'is_read' => false,
-        ]);
+        $stats = $scraper->scrape($this->niche, $this->location);
+
+        Log::info('Background scrape completed.', $stats);
+
+        $message = $stats['found'] === 0
+            ? "Scraping \"{$this->niche}\" di \"{$this->location}\" selesai, tetapi tidak ada bisnis yang ditemukan. Coba kata kunci yang lebih umum."
+            : "Scraping \"{$this->niche}\" di \"{$this->location}\" selesai: {$stats['found']} bisnis ditemukan, {$stats['created']} lead baru, {$stats['updated']} diperbarui.";
+
+        ScrapingNotification::notify('success', 'Scraping Selesai', $message, $this->niche, $this->location);
     }
 
-    /**
-     * Handle a job failure.
-     */
-    public function failed(\Throwable $exception): void
+    public function failed(?Throwable $exception): void
     {
-        // Create 'failed' status notification in database
-        \App\Models\ScrapingNotification::create([
-            'niche' => $this->niche,
-            'location' => $this->location,
-            'type' => 'failed',
-            'title' => 'Scraping Gagal',
-            'message' => "Scraping leads untuk niche \"{$this->niche}\" di kota \"{$this->location}\" gagal.",
-            'is_read' => false,
-        ]);
+        $saved = $exception instanceof ScrapeFailedException ? ($exception->stats['created'] ?? 0) : 0;
+        $reason = $exception ? Str::limit($exception->getMessage(), 200) : 'alasan tidak diketahui';
+
+        Log::error("Scrape failed for {$this->niche} in {$this->location}: {$reason}");
+
+        ScrapingNotification::notify(
+            'failed',
+            'Scraping Gagal',
+            "Scraping \"{$this->niche}\" di \"{$this->location}\" gagal: {$reason}".($saved ? " ({$saved} lead baru sempat tersimpan.)" : ''),
+            $this->niche,
+            $this->location
+        );
     }
 }

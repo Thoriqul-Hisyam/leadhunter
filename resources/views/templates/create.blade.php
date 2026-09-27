@@ -58,9 +58,11 @@
                         </div>
                     </div>
 
+                    @include('templates.partials.ai-generator')
+
                     <div id="subject-group" class="transition-all duration-300">
                         <label for="subject" class="form-label text-xs">Email Subject Line</label>
-                        <input type="text" name="subject" id="subject" placeholder="e.g. Special offer for {{ '{' }}{{ 'business_name' }}{{ '}' }}" class="form-input text-xs" value="{{ old('subject') }}">
+                        <input type="text" name="subject" id="subject" placeholder="e.g. Special offer for @{{business_name}}" class="form-input text-xs" value="{{ old('subject') }}">
                         @error('subject') <p class="text-2xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                     </div>
 
@@ -91,7 +93,7 @@
         <div class="lg:col-span-1 space-y-6">
             <div class="glass-card p-6 sticky top-24" style="animation: fadeInUp 0.4s ease backwards; animation-delay: 0.08s;">
                 <h4 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <span>💡 Placeholder Helper</span>
+                    <span class="inline-flex items-center gap-1.5"><x-icon name="light-bulb" class="w-3.5 h-3.5" /> Placeholder Helper</span>
                 </h4>
                 <p class="text-2xs text-slate-500 dark:text-slate-400 leading-normal mb-5">Click on any chip below to automatically insert the variable tag into your subject or body editor at your cursor position.</p>
 
@@ -99,24 +101,24 @@
                     <div>
                         <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Lead Information</p>
                         <div class="flex flex-wrap gap-2">
-                            <button type="button" onclick="injectPlaceholder('{{ '{' }}{{ 'business_name' }}{{ '}' }}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
-                                <span class="font-mono text-2xs font-bold">{{ '{' }}{{ 'business_name' }}{{ '}' }}</span>
+                            <button type="button" onclick="injectPlaceholder('@{{business_name}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
+                                <span class="font-mono text-2xs font-bold">@{{business_name}}</span>
                                 <span class="text-[9px] font-normal text-slate-400 dark:text-slate-500 mt-0.5">Nama bisnis dari Google Maps</span>
                             </button>
-                            <button type="button" onclick="injectPlaceholder('{{ '{' }}{{ 'city' }}{{ '}' }}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
-                                <span class="font-mono text-2xs font-bold">{{ '{' }}{{ 'city' }}{{ '}' }}</span>
+                            <button type="button" onclick="injectPlaceholder('@{{city}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
+                                <span class="font-mono text-2xs font-bold">@{{city}}</span>
                                 <span class="text-[9px] font-normal text-slate-400 dark:text-slate-500 mt-0.5">Kota tempat bisnis terdaftar</span>
                             </button>
-                            <button type="button" onclick="injectPlaceholder('{{ '{' }}{{ 'niche' }}{{ '}' }}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
-                                <span class="font-mono text-2xs font-bold">{{ '{' }}{{ 'niche' }}{{ '}' }}</span>
+                            <button type="button" onclick="injectPlaceholder('@{{niche}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
+                                <span class="font-mono text-2xs font-bold">@{{niche}}</span>
                                 <span class="text-[9px] font-normal text-slate-400 dark:text-slate-500 mt-0.5">Kategori / niche bidang bisnis</span>
                             </button>
-                            <button type="button" onclick="injectPlaceholder('{{ '{' }}{{ 'website' }}{{ '}' }}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
-                                <span class="font-mono text-2xs font-bold">{{ '{' }}{{ 'website' }}{{ '}' }}</span>
+                            <button type="button" onclick="injectPlaceholder('@{{website}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
+                                <span class="font-mono text-2xs font-bold">@{{website}}</span>
                                 <span class="text-[9px] font-normal text-slate-400 dark:text-slate-500 mt-0.5">Alamat website bisnis (jika ada)</span>
                             </button>
-                            <button type="button" onclick="injectPlaceholder('{{ '{' }}{{ 'phone' }}{{ '}' }}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
-                                <span class="font-mono text-2xs font-bold">{{ '{' }}{{ 'phone' }}{{ '}' }}</span>
+                            <button type="button" onclick="injectPlaceholder('@{{phone}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
+                                <span class="font-mono text-2xs font-bold">@{{phone}}</span>
                                 <span class="text-[9px] font-normal text-slate-400 dark:text-slate-500 mt-0.5">Nomor telepon kontak bisnis</span>
                             </button>
                         </div>
@@ -125,13 +127,21 @@
                     <div>
                         <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Campaign Settings</p>
                         <div class="flex flex-wrap gap-2">
-                            <button type="button" onclick="injectPlaceholder('{{ '{' }}{{ 'offer' }}{{ '}' }}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
-                                <span class="font-mono text-2xs font-bold">{{ '{' }}{{ 'offer' }}{{ '}' }}</span>
+                            <button type="button" onclick="injectPlaceholder('@{{offer}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
+                                <span class="font-mono text-2xs font-bold">@{{offer}}</span>
                                 <span class="text-[9px] font-normal text-slate-400 dark:text-slate-500 mt-0.5">Layanan penawaran Anda (misal: Website)</span>
                             </button>
-                            <button type="button" onclick="injectPlaceholder('{{ '{' }}{{ 'sender_name' }}{{ '}' }}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
-                                <span class="font-mono text-2xs font-bold">{{ '{' }}{{ 'sender_name' }}{{ '}' }}</span>
+                            <button type="button" onclick="injectPlaceholder('@{{sender_name}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
+                                <span class="font-mono text-2xs font-bold">@{{sender_name}}</span>
                                 <span class="text-[9px] font-normal text-slate-400 dark:text-slate-500 mt-0.5">Nama Anda selaku pengirim pesan</span>
+                            </button>
+                            <button type="button" onclick="injectPlaceholder('@{{company_name}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
+                                <span class="font-mono text-2xs font-bold">@{{company_name}}</span>
+                                <span class="text-[9px] font-normal text-slate-400 dark:text-slate-500 mt-0.5">Nama usaha Anda (dari Pengaturan)</span>
+                            </button>
+                            <button type="button" onclick="injectPlaceholder('@{{company_website}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
+                                <span class="font-mono text-2xs font-bold">@{{company_website}}</span>
+                                <span class="text-[9px] font-normal text-slate-400 dark:text-slate-500 mt-0.5">Website usaha Anda (dari Pengaturan)</span>
                             </button>
                         </div>
                     </div>

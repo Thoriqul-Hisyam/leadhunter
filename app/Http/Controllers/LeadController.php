@@ -2,201 +2,211 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Lead;
-use Illuminate\Http\Request;
-use App\Services\GoogleMapsScraperService;
-
+use App\Exceptions\CrawlException;
+use App\Helpers\Url;
+use App\Jobs\ScrapeGoogleMapsJob;
 use App\Models\Campaign;
+use App\Models\Lead;
+use App\Models\LeadNote;
+use App\Models\ScrapingNotification;
+use App\Services\WebsiteCrawlerService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class LeadController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Lead::query();
-        
-        if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('business_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('niche', 'like', '%' . $request->search . '%')
-                  ->orWhere('city', 'like', '%' . $request->search . '%');
-            });
-        }
+        $filters = $request->only(['search', 'no_website', 'has_email', 'has_phone', 'has_website', 'stage']);
 
-        if ($request->filled('no_website')) {
-            $query->where(function($q) {
-                $q->whereNull('website')->orWhere('website', '');
-            });
-        }
-
-        $pendingScrapes = \Illuminate\Support\Facades\DB::table('jobs')->count();
-        $leads = $query->latest()->paginate(20);
+        $leads = Lead::query()->filter($filters)->latest()->paginate(20)->withQueryString();
+        $pendingScrapes = $this->pendingScrapes();
         $campaigns = Campaign::all();
-        return view('leads.index', compact('leads', 'pendingScrapes', 'campaigns'));
+        $stages = Lead::STAGES;
+
+        return view('leads.index', compact('leads', 'pendingScrapes', 'campaigns', 'stages', 'filters'));
+    }
+
+    public function show(Lead $lead)
+    {
+        $lead->load(['notes.user', 'outreachMessages' => fn ($q) => $q->with('campaign')->latest()]);
+        $stages = Lead::STAGES;
+
+        return view('leads.show', compact('lead', 'stages'));
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'business_name' => 'required|string|max:255',
-            'niche' => 'required|string|max:255',
-            'website' => 'nullable|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:255',
-            'address' => 'nullable|string|max:255',
-            'city' => 'required|string|max:255',
-            'source' => 'required|string|max:255',
+        Lead::create($this->validateLead($request));
+
+        return redirect()->route('leads.index')->with('success', 'Lead berhasil ditambahkan!');
+    }
+
+    public function update(Request $request, Lead $lead)
+    {
+        $lead->update($this->validateLead($request, $lead));
+
+        return redirect()->back()->with('success', 'Lead berhasil diperbarui!');
+    }
+
+    public function updateStage(Request $request, Lead $lead)
+    {
+        $request->validate([
+            'pipeline_stage' => ['required', Rule::in(array_keys(Lead::STAGES))],
         ]);
 
-        Lead::create($validated);
+        $lead->update(['pipeline_stage' => $request->pipeline_stage]);
 
-        return redirect()->route('leads.index')->with('success', 'Lead created successfully!');
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'success', 'stage' => $lead->pipeline_stage, 'label' => $lead->stageLabel()]);
+        }
+
+        return redirect()->back()->with('success', "Stage {$lead->business_name} diubah ke {$lead->stageLabel()}.");
+    }
+
+    public function storeNote(Request $request, Lead $lead)
+    {
+        $request->validate(['body' => 'required|string|max:5000']);
+
+        $lead->notes()->create([
+            'user_id' => $request->user()->id,
+            'body' => $request->body,
+        ]);
+
+        return redirect()->route('leads.show', $lead)->with('success', 'Catatan ditambahkan.');
+    }
+
+    public function destroyNote(Lead $lead, LeadNote $note)
+    {
+        abort_unless($note->lead_id === $lead->id, 404);
+
+        $note->delete();
+
+        return redirect()->route('leads.show', $lead)->with('success', 'Catatan dihapus.');
     }
 
     public function scrape(Request $request)
     {
         $request->validate([
-            'niche' => 'required|string',
-            'location' => 'required|string',
+            'niche' => 'required|string|max:100',
+            'location' => 'required|string|max:100',
         ]);
 
-        // Create 'running' status notification in database
-        \App\Models\ScrapingNotification::create([
-            'niche' => $request->niche,
-            'location' => $request->location,
-            'type' => 'running',
-            'title' => 'Scraping Sedang Dijalankan',
-            'message' => "Scraping leads untuk niche \"{$request->niche}\" di kota \"{$request->location}\" sedang berjalan.",
-            'is_read' => false,
-        ]);
+        ScrapingNotification::notify(
+            'running',
+            'Scraping Sedang Dijalankan',
+            "Scraping leads untuk niche \"{$request->niche}\" di kota \"{$request->location}\" sedang berjalan.",
+            $request->niche,
+            $request->location
+        );
 
-        \App\Jobs\ScrapeGoogleMapsJob::dispatch($request->niche, $request->location);
+        ScrapeGoogleMapsJob::dispatch($request->niche, $request->location);
 
-        return redirect()->route('leads.index')->with('success', 'Scraping started in the background! It may take a few minutes to complete. Please check back later or refresh this page to see new leads.');
+        return redirect()->route('leads.index')->with('success', 'Scraping dimulai di background. Proses ini bisa memakan beberapa menit; notifikasi akan muncul di ikon lonceng saat selesai.');
     }
 
-    public function update(Request $request, Lead $lead)
+    public function scrapeStatus()
     {
-        $validated = $request->validate([
-            'business_name' => 'required|string|max:255',
+        return response()->json([
+            'notifications' => ScrapingNotification::latest()->limit(30)->get(),
+            'pending_scrapes' => $this->pendingScrapes(),
+        ]);
+    }
+
+    public function markNotificationsRead()
+    {
+        ScrapingNotification::where('is_read', false)->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function clearNotifications()
+    {
+        ScrapingNotification::query()->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function crawlWebsite(Lead $lead, WebsiteCrawlerService $crawler)
+    {
+        if (empty($lead->website)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lead ini belum punya URL website.',
+            ], 400);
+        }
+
+        // Crawl bisa sampai ~60 detik; jangan sampai kena max_execution_time PHP.
+        set_time_limit((int) config('leadhunter.crawler.timeout', 60) + 30);
+
+        try {
+            $contacts = $crawler->crawl($lead->website);
+        } catch (CrawlException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
+        $updates = [];
+        if ($contacts['email'] && empty($lead->email)) {
+            $updates['email'] = $contacts['email'];
+        }
+        if ($contacts['phone'] && empty($lead->phone)) {
+            $updates['phone'] = $contacts['phone'];
+        }
+
+        if ($updates) {
+            $lead->update($updates);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $updates
+                ? 'Kontak baru berhasil ditemukan dan disimpan!'
+                : 'Crawl selesai, tetapi tidak ada email atau telepon baru yang ditemukan.',
+            'data' => [
+                'email' => $lead->email,
+                'phone' => $lead->phone,
+            ],
+        ]);
+    }
+
+    public function destroy(Lead $lead)
+    {
+        $lead->outreachMessages()->delete();
+        $lead->delete(); // catatan lead ikut terhapus (cascade)
+
+        return redirect()->route('leads.index')->with('success', 'Lead berhasil dihapus!');
+    }
+
+    protected function validateLead(Request $request, ?Lead $lead = null): array
+    {
+        $request->merge(['website' => Url::normalize($request->input('website')) ?? ($request->filled('website') ? 'invalid' : null)]);
+
+        return $request->validate([
+            'business_name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('leads')->where('city', $request->input('city'))->ignore($lead?->id),
+            ],
             'niche' => 'required|string|max:255',
-            'website' => 'nullable|string|max:255',
+            'website' => 'nullable|url:http,https|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
             'city' => 'required|string|max:255',
             'source' => 'required|string|max:255',
-        ]);
-
-        $lead->update($validated);
-
-        return redirect()->route('leads.index')->with('success', 'Lead updated successfully!');
-    }
-
-    public function scrapeStatus(Request $request)
-    {
-        // 1. Optional action to mark all notifications as read
-        if ($request->query('action') === 'mark-read') {
-            \App\Models\ScrapingNotification::where('is_read', false)->update(['is_read' => true]);
-            return response()->json(['success' => true]);
-        }
-
-        // 2. Optional action to clear all notifications (delete from DB)
-        if ($request->query('action') === 'clear') {
-            \App\Models\ScrapingNotification::query()->delete();
-            return response()->json(['success' => true]);
-        }
-
-        // 3. Return latest 30 scraping notifications from database
-        $notifications = \App\Models\ScrapingNotification::latest()->limit(30)->get();
-
-        return response()->json([
-            'notifications' => $notifications
+        ], [
+            'business_name.unique' => 'Lead dengan nama bisnis dan kota yang sama sudah ada.',
+            'website.url' => 'Website harus berupa URL http/https yang valid.',
         ]);
     }
 
-    public function crawlWebsite(Request $request, Lead $lead)
+    protected function pendingScrapes(): int
     {
-        if (empty($lead->website)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lead does not have a website URL registered.'
-            ], 400);
-        }
-
-        $nodePath = 'C:\\nvm4w\\nodejs\\node.exe';
-        if (!file_exists($nodePath)) {
-            $nodePath = 'node';
-        }
-        $scriptPath = base_path('scripts/crawl-website.js');
-
-        try {
-            $processResult = \Illuminate\Support\Facades\Process::timeout(40)->run([$nodePath, $scriptPath, $lead->website]);
-            
-            if ($processResult->successful()) {
-                $output = $processResult->output();
-                $lines = explode("\n", $output);
-                $crawlData = null;
-                
-                foreach ($lines as $line) {
-                    $line = trim($line);
-                    if (str_starts_with($line, 'RESULT_JSON:')) {
-                        $json = substr($line, 12);
-                        $crawlData = json_decode($json, true);
-                        break;
-                    }
-                }
-                
-                if ($crawlData && ($crawlData['success'] ?? false)) {
-                    $updates = [];
-                    if (!empty($crawlData['email']) && empty($lead->email)) {
-                        $updates['email'] = $crawlData['email'];
-                    }
-                    if (!empty($crawlData['phone']) && empty($lead->phone)) {
-                        $updates['phone'] = $crawlData['phone'];
-                    }
-                    
-                    if (!empty($updates)) {
-                        $lead->update($updates);
-                        return response()->json([
-                            'success' => true,
-                            'message' => 'Successfully found and updated contact details!',
-                            'data' => [
-                                'email' => $lead->email,
-                                'phone' => $lead->phone,
-                            ]
-                        ]);
-                    } else {
-                        return response()->json([
-                            'success' => true,
-                            'message' => 'Crawl completed, but no new email or phone details were found.',
-                            'data' => [
-                                'email' => $lead->email,
-                                'phone' => $lead->phone,
-                            ]
-                        ]);
-                    }
-                }
-            }
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Could not crawl the website or extract contact information. Please check if the website is online.'
-            ], 500);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Crawling failed: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function destroy(Lead $lead)
-    {
-        // Safe cascading delete of outreach messages in PHP
-        $lead->outreachMessages()->delete();
-        $lead->delete();
-
-        return redirect()->route('leads.index')->with('success', 'Lead deleted successfully!');
+        return DB::table('jobs')
+            ->where(fn ($q) => $q->where('queue', 'scraping')->orWhere('payload', 'like', '%ScrapeGoogleMapsJob%'))
+            ->count();
     }
 }

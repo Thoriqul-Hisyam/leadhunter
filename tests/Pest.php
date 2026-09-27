@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\User;
+use Database\Seeders\RoleAndAdminSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /*
@@ -16,35 +19,52 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        // Test tidak boleh memanggil AI, Google, atau Apify sungguhan.
+        Http::preventStrayRequests();
+    })
     ->in('Feature');
 
-/*
-|--------------------------------------------------------------------------
-| Expectations
-|--------------------------------------------------------------------------
-|
-| When you're writing tests, you often need to check that values meet certain conditions. The
-| "expect()" function gives you access to a set of "expectations" methods that you can use
-| to assert different things. Of course, you may extend the Expectation API at any time.
-|
-*/
-
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
-});
+pest()->extend(TestCase::class)->in('Unit');
 
 /*
 |--------------------------------------------------------------------------
 | Functions
 |--------------------------------------------------------------------------
-|
-| While Pest is very powerful out-of-the-box, you may have some testing code specific to your
-| project that you don't want to repeat in every file. Here you can also expose helpers as
-| global functions to help you to reduce the number of lines of code in your test files.
-|
 */
 
-function something()
+/**
+ * Login sebagai user baru dengan role tertentu (role & permission dari seeder).
+ */
+function loginAs(?string $role = 'admin'): User
 {
-    // ..
+    test()->seed(RoleAndAdminSeeder::class);
+
+    $user = User::factory()->create();
+
+    if ($role) {
+        $user->assignRole($role);
+    }
+
+    test()->actingAs($user);
+
+    return $user;
+}
+
+/**
+ * Aktifkan AI dengan key palsu (panggilan HTTP-nya di-fake per test).
+ */
+function fakeAiConfigured(): void
+{
+    config([
+        'services.ai.key' => 'test-key',
+        'services.ai.base_url' => 'https://ai.test/v1',
+        'services.ai.model' => 'test-model',
+        'services.ai.retries' => 0,
+    ]);
+}
+
+function aiResponse(string $content): array
+{
+    return ['choices' => [['message' => ['role' => 'assistant', 'content' => $content]]]];
 }

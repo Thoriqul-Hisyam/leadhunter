@@ -16,11 +16,11 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         if (!auth()->check()) {
-            return redirect()->route('login')->with('error', 'Silakan masuk terlebih dahulu 🔒');
+            return redirect()->route('login')->with('error', 'Silakan masuk terlebih dahulu');
         }
 
         if (!$request->user()->hasAnyRole($roles)) {
-            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk membuka halaman ini 🚫');
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk membuka halaman ini');
         }
 
         return $next($request);

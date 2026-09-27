@@ -2,9 +2,8 @@
 
 use App\Models\MessageTemplate;
 use App\Models\Lead;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+beforeEach(fn () => loginAs());
 
 test('user can view templates list', function () {
     MessageTemplate::create([
@@ -61,4 +60,12 @@ test('it renders variables correctly', function () {
     ]);
 
     expect($renderedText)->toBe('Halo Klinik Gigi Sehat, kami menawarkan Jasa Pembuatan Website di Surabaya. Hubungi 08123456789 atau kunjungi https://klinikgigisehat.com. Terimakasih, Thoriq dari Lefateach');
+});
+
+test('placeholder chips insert double-brace tags that the renderer understands', function () {
+    $html = $this->get(route('templates.create'))->assertOk()->getContent();
+
+    expect($html)->toContain("injectPlaceholder('{{business_name}}')")
+        ->toContain("injectPlaceholder('{{company_website}}')")
+        ->not->toContain("injectPlaceholder('{business_name}')");
 });

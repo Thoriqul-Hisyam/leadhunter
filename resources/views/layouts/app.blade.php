@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="Sandesa — Cari leads, outreach personal otomatis bertenaga AI, dan kelola campaign dengan mudah.">
     <title>@yield('title', 'Sandesa')</title>
     {{-- Favicon --}}
@@ -27,250 +28,204 @@
             background-color: #f9f8fc;
             background-attachment: fixed;
         }
+        .nav-group { background-color: rgba(255, 255, 255, 0.8); border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04); backdrop-filter: blur(8px); scrollbar-width: none; }
+        .nav-group::-webkit-scrollbar { display: none; }
         .nav-pill {
-            display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.6rem 1.25rem;
-            border-radius: 9999px; font-size: 0.875rem; font-weight: 600;
-            transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem;
+            border-radius: 9999px; font-size: 0.8125rem; font-weight: 600; white-space: nowrap;
+            color: #64748b; transition: background-color 0.15s, color 0.15s;
         }
+        .nav-pill:hover { color: #0f172a; background-color: #f1f5f9; }
         .nav-pill.active { background-color: #0f172a; color: #ffffff; }
-        .nav-pill:not(.active) { background-color: #ffffff; color: #64748b; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border: 1px solid rgba(226, 232, 240, 0.6); }
-        .nav-pill:not(.active):hover { color: #0f172a; border-color: #cbd5e1; }
-        
+        .nav-icon-btn {
+            width: 2.25rem; height: 2.25rem; align-items: center; justify-content: center;
+            border-radius: 9999px; color: #64748b; background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(226, 232, 240, 0.8); transition: color 0.15s, border-color 0.15s; cursor: pointer;
+        }
+        .nav-icon-btn:hover { color: #0f172a; border-color: #cbd5e1; }
+        .user-menu-link { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 600; color: #334155; transition: background-color 0.15s; text-align: left; }
+        .user-menu-link:hover { background-color: #f8fafc; }
+
         .dash-card {
             background-color: #ffffff; border-radius: 1.5rem; padding: 1.5rem;
             box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
             border: 1px solid rgba(241, 245, 249, 1);
         }
         
+        [data-theme="dark"] body { background-color: #0f111a; }
+        [data-theme="dark"] .glass-bg {
+            background: radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 90%, rgba(236, 72, 153, 0.08) 0%, transparent 40%);
+            background-color: #0f111a;
+        }
+        [data-theme="dark"] .dash-card { background-color: #161824; border-color: rgba(255, 255, 255, 0.06); }
+        [data-theme="dark"] .nav-group { background-color: rgba(22, 24, 36, 0.85); border-color: rgba(255, 255, 255, 0.08); }
+        [data-theme="dark"] .nav-pill { color: #94a3b8; }
+        [data-theme="dark"] .nav-pill:hover { color: #ffffff; background-color: rgba(255, 255, 255, 0.06); }
+        [data-theme="dark"] .nav-pill.active { background-color: #6366f1; color: #ffffff; }
+        [data-theme="dark"] .nav-icon-btn { background-color: #161824; border-color: rgba(255, 255, 255, 0.08); color: #94a3b8; }
+        [data-theme="dark"] .nav-icon-btn:hover { color: #ffffff; }
+        [data-theme="dark"] .user-menu-link { color: #cbd5e1; }
+        [data-theme="dark"] .user-menu-link:hover { background-color: rgba(255, 255, 255, 0.04); }
+
         /* Custom scrollbar for webkit */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* Hide Google Translate top banner bar & branding */
-        .goog-te-banner-frame {
-            display: none !important;
-        }
-        body {
-            top: 0px !important;
-        }
-        .goog-te-gadget {
-            font-size: 0px !important;
-        }
-        .goog-te-gadget span {
-            display: none !important;
-        }
-        .goog-te-gadget img {
-            display: none !important;
-        }
-        .goog-te-combo {
-            display: none !important;
-        }
-        .goog-text-highlight {
-            background-color: transparent !important;
-            box-shadow: none !important;
-        }
     </style>
 </head>
 <body class="font-sans antialiased text-slate-800 dark:text-slate-200 glass-bg min-h-screen flex flex-col">
     {{-- ===== TOP NAVIGATION ===== --}}
-    <nav id="main-navbar" class="w-full px-6 py-4 flex items-center justify-between gap-4 sticky top-0 z-50 relative transition-all duration-300">
-        {{-- Left: Sandesa Logo (Notion-style) --}}
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-3 mr-4 group" title="Sandesa Dashboard">
-            <!-- Notion-style 3D Isometric SVG Logomark -->
-            <svg class="w-9 h-9 transition-transform duration-200 group-hover:scale-105 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 268">
-                <defs>
-                    <!-- Official Sandesa Indigo-to-Violet Gradient for the 'S' -->
-                    <linearGradient id="sandesaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#6366f1" /> <!-- Indigo 500 -->
-                        <stop offset="100%" stop-color="#a855f7" /> <!-- Purple/Violet 500 -->
-                    </linearGradient>
-                    <!-- Glowing pastel gradient for the 3D top lid -->
-                    <linearGradient id="sandesaTopGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#818cf8" /> <!-- Indigo 400 -->
-                        <stop offset="100%" stop-color="#c084fc" /> <!-- Purple/Violet 400 -->
-                    </linearGradient>
-                </defs>
-                <!-- Outer silhouette (tilted box boundary) -->
-                <path class="fill-slate-900 dark:fill-white" d="M164.09.608 16.092 11.538C4.155 12.573 0 20.374 0 29.726v162.245c0 7.284 2.585 13.516 8.826 21.843l34.789 45.237c5.715 7.284 10.912 8.844 21.825 8.327l171.864-10.404c14.532-1.035 18.696-7.801 18.696-19.24V55.207c0-5.911-2.336-7.614-9.21-12.66l-1.185-.856L198.37 8.409C186.94.1 182.27-.952 164.09.608Z"/>
-                <!-- Top Face (Tilted top lid - glowing pastel gradient) -->
-                <path fill="url(#sandesaTopGrad)" d="M69.327 52.22c-14.033.945-17.216 1.159-25.186-5.323L23.876 30.778c-2.06-2.086-1.026-4.69 4.163-5.207l142.274-10.395c11.947-1.043 18.17 3.12 22.842 6.758l24.401 17.68c1.043.525 3.638 3.637.517 3.637L71.146 52.095l-1.819.125Z"/>
-                <!-- Front Face (tilted main container) -->
-                <path class="fill-white dark:fill-slate-950" d="M52.967 236.174V81.222c0-6.767 2.077-9.887 8.3-10.413L230.02 60.93c5.724-.517 8.31 3.12 8.31 9.879v153.917c0 6.767-1.044 12.49-10.387 13.008l-161.487 9.361c-9.343.517-13.489-2.594-13.489-10.921Z"/>
-                <!-- Center skewed Letter 'S' in premium serif style (perfectly centered, colorful gradient) -->
-                <g transform="matrix(0.97, -0.10, 0, 0.95, 7, 45)">
-                    <text x="145" y="165" font-family="Georgia, serif" font-weight="900" font-size="142" text-anchor="middle" fill="url(#sandesaGrad)">S</text>
-                </g>
-            </svg>
-            
-            <!-- Clean brand wordmark in elegant matching typography -->
-            <span class="text-xl font-bold text-slate-800 dark:text-white hidden sm:block tracking-tight" style="font-family: 'Inter', sans-serif;">Sandesa</span>
-        </a>
-        
-        {{-- Middle: Nav Pills (Absolutely Centered) --}}
+    @php
+        $navItems = [
+            ['route' => 'dashboard', 'active' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard', 'can' => null],
+            ['route' => 'leads.index', 'active' => 'leads.*', 'label' => 'Leads', 'icon' => 'users', 'can' => 'manage_leads'],
+            ['route' => 'pipeline.index', 'active' => 'pipeline.*', 'label' => 'Pipeline', 'icon' => 'pipeline', 'can' => 'manage_leads'],
+            ['route' => 'campaigns.index', 'active' => 'campaigns.*', 'label' => 'Campaign', 'icon' => 'megaphone', 'can' => 'manage_campaigns'],
+            ['route' => 'templates.index', 'active' => 'templates.*', 'label' => 'Template', 'icon' => 'document', 'can' => 'manage_templates'],
+            ['route' => 'outreach.index', 'active' => 'outreach.*', 'label' => 'Outreach', 'icon' => 'envelope', 'can' => 'send_outreach'],
+        ];
+    @endphp
+    <nav id="main-navbar" class="w-full sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-400 mx-auto px-4 md:px-6 py-3 flex items-center gap-3">
+            {{-- Logo --}}
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 shrink-0 group" title="Sandesa Dashboard">
+                <svg class="w-8 h-8 transition-transform duration-200 group-hover:scale-105 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 268">
+                    <defs>
+                        <linearGradient id="sandesaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6366f1" />
+                            <stop offset="100%" stop-color="#a855f7" />
+                        </linearGradient>
+                        <linearGradient id="sandesaTopGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#818cf8" />
+                            <stop offset="100%" stop-color="#c084fc" />
+                        </linearGradient>
+                    </defs>
+                    <path class="fill-slate-900 dark:fill-white" d="M164.09.608 16.092 11.538C4.155 12.573 0 20.374 0 29.726v162.245c0 7.284 2.585 13.516 8.826 21.843l34.789 45.237c5.715 7.284 10.912 8.844 21.825 8.327l171.864-10.404c14.532-1.035 18.696-7.801 18.696-19.24V55.207c0-5.911-2.336-7.614-9.21-12.66l-1.185-.856L198.37 8.409C186.94.1 182.27-.952 164.09.608Z"/>
+                    <path fill="url(#sandesaTopGrad)" d="M69.327 52.22c-14.033.945-17.216 1.159-25.186-5.323L23.876 30.778c-2.06-2.086-1.026-4.69 4.163-5.207l142.274-10.395c11.947-1.043 18.17 3.12 22.842 6.758l24.401 17.68c1.043.525 3.638 3.637.517 3.637L71.146 52.095l-1.819.125Z"/>
+                    <path class="fill-white dark:fill-slate-950" d="M52.967 236.174V81.222c0-6.767 2.077-9.887 8.3-10.413L230.02 60.93c5.724-.517 8.31 3.12 8.31 9.879v153.917c0 6.767-1.044 12.49-10.387 13.008l-161.487 9.361c-9.343.517-13.489-2.594-13.489-10.921Z"/>
+                    <g transform="matrix(0.97, -0.10, 0, 0.95, 7, 45)">
+                        <text x="145" y="165" font-family="Georgia, serif" font-weight="900" font-size="142" text-anchor="middle" fill="url(#sandesaGrad)">S</text>
+                    </g>
+                </svg>
+                <span class="text-lg font-bold text-slate-800 dark:text-white hidden sm:block tracking-tight">Sandesa</span>
+            </a>
+
+            {{-- Menu utama (desktop): satu wadah segmented yang ikut lebar layar, tidak lagi absolute --}}
+            @auth
+            <div class="hidden lg:flex flex-1 min-w-0 justify-center">
+                <div class="nav-group flex items-center gap-0.5 p-1 rounded-full max-w-full overflow-x-auto">
+                    @foreach($navItems as $item)
+                        @if(! $item['can'] || auth()->user()->can($item['can']))
+                            <a href="{{ route($item['route']) }}" title="{{ $item['label'] }}" class="nav-pill {{ request()->routeIs($item['active']) ? 'active' : '' }}">
+                                <x-icon :name="$item['icon']" class="w-4 h-4" />
+                                <span class="hidden xl:inline">{{ $item['label'] }}</span>
+                            </a>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+            @endauth
+
+            {{-- Kanan: tema, notifikasi, profil --}}
+            <div class="flex items-center gap-2 ml-auto lg:ml-0 shrink-0">
+                @auth
+                    <button type="button" id="theme-toggle" class="inline-flex nav-icon-btn" title="Ganti tema terang/gelap" aria-label="Ganti tema terang/gelap">
+                        <svg class="w-4 h-4 moon-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+                        <svg class="w-4 h-4 sun-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+                    </button>
+
+                    <!-- Notifikasi -->
+                    <div class="relative" id="notification-bell-container">
+                        <button id="notification-bell-btn" class="inline-flex nav-icon-btn relative" title="Notifikasi" aria-label="Notifikasi">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+                            <span id="notification-badge" class="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-slate-900 hidden"></span>
+                        </button>
+
+                        <div id="notification-dropdown" class="absolute right-0 mt-3 w-80 max-w-[calc(100vw-2rem)] rounded-2xl shadow-xl backdrop-blur-md bg-white/95 dark:bg-slate-900/95 border border-slate-200/60 dark:border-slate-800/60 transform origin-top-right scale-95 opacity-0 pointer-events-none transition-all duration-200 ease-out z-50">
+                            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-bold text-slate-800 dark:text-white">Notifikasi</span>
+                                    <span id="unread-count-badge" class="text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-full hidden">0</span>
+                                </div>
+                                <button id="clear-notifications-btn" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer border-0 bg-transparent">Hapus Semua</button>
+                            </div>
+                            <div id="notification-list" class="max-h-72 overflow-y-auto py-1 divide-y divide-slate-100 dark:divide-slate-800/60"></div>
+                        </div>
+                    </div>
+
+                    <!-- Profil -->
+                    <div class="relative" id="user-menu-container">
+                        <button id="user-menu-btn" class="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-white/80 dark:hover:bg-slate-800/80 transition focus:outline-none cursor-pointer group">
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6366f1&color=fff&rounded=true" alt="" class="w-8 h-8 rounded-full object-cover shrink-0">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 hidden md:block max-w-32 truncate">{{ Auth::user()->name }}</span>
+                            <x-icon name="chevron-down" class="w-3.5 h-3.5 text-slate-400 hidden md:block" />
+                        </button>
+
+                        <div id="user-menu-dropdown" class="absolute right-0 mt-3 w-56 rounded-2xl shadow-xl backdrop-blur-md bg-white/95 dark:bg-slate-900/95 border border-slate-200/60 dark:border-slate-800/60 transform origin-top-right scale-95 opacity-0 pointer-events-none transition-all duration-200 ease-out z-50 overflow-hidden">
+                            <div class="px-4 py-3.5 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/20">
+                                <span class="text-xs font-black text-slate-800 dark:text-white block leading-tight truncate">{{ Auth::user()->name }}</span>
+                                <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 block mt-1 truncate">{{ Auth::user()->email }}</span>
+                                <div class="flex flex-wrap gap-1 mt-2">
+                                    @foreach(Auth::user()->roles as $r)
+                                        <span class="text-[9px] font-extrabold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-full uppercase tracking-wider">{{ $r->name }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="py-1">
+                                @can('manage_settings')
+                                    <a href="{{ route('settings.edit') }}" class="user-menu-link"><x-icon name="cog" class="w-4 h-4" /> Pengaturan & Blacklist</a>
+                                @endcan
+                                @can('manage_users')
+                                    <a href="{{ route('users.index') }}" class="user-menu-link"><x-icon name="user" class="w-4 h-4" /> Kelola Pengguna</a>
+                                @endcan
+                                @can('manage_roles')
+                                    <a href="{{ route('roles.index') }}" class="user-menu-link"><x-icon name="shield" class="w-4 h-4" /> Kelola Hak Akses</a>
+                                @endcan
+                                @canany(['manage_settings', 'manage_users', 'manage_roles'])
+                                    <div class="border-t border-slate-100 dark:border-slate-800/60 my-1"></div>
+                                @endcanany
+                                <form action="{{ route('logout') }}" method="POST" class="w-full">
+                                    @csrf
+                                    <button type="submit" class="user-menu-link w-full text-rose-600 dark:text-rose-400 hover:bg-rose-50/60! dark:hover:bg-rose-950/20! cursor-pointer border-0 bg-transparent">
+                                        <x-icon name="logout" class="w-4 h-4" /> Keluar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tombol menu mobile -->
+                    <button type="button" id="mobile-menu-btn" class="inline-flex nav-icon-btn lg:hidden" aria-label="Buka menu" aria-expanded="false" aria-controls="mobile-menu">
+                        <x-icon name="menu" class="w-5 h-5" />
+                    </button>
+                @else
+                    <a href="{{ route('login') }}" class="text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white px-3.5 py-2 transition">Masuk</a>
+                @endauth
+            </div>
+        </div>
+
+        {{-- Menu mobile --}}
         @auth
-        <div class="hidden lg:flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
-            <a href="{{ route('dashboard') }}" class="nav-pill {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                {{ __('Dashboard') }}
-            </a>
-            <a href="{{ route('leads.index') }}" class="nav-pill {{ request()->routeIs('leads.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                {{ __('Leads') }}
-            </a>
-            <a href="{{ route('campaigns.index') }}" class="nav-pill {{ request()->routeIs('campaigns.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                </svg>
-                {{ __('Campaign') }}
-            </a>
-            <a href="{{ route('templates.index') }}" class="nav-pill {{ request()->routeIs('templates.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                {{ __('Templates') }}
-            </a>
-            <a href="{{ route('outreach.index') }}" class="nav-pill {{ request()->routeIs('outreach.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                {{ __('Outreach') }}
-            </a>
-            @if(Auth::user()->is_admin)
-                <a href="{{ route('users.index') }}" class="nav-pill {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    {{ __('Users') }}
-                </a>
-                <a href="{{ route('roles.index') }}" class="nav-pill {{ request()->routeIs('roles.*') ? 'active' : '' }}">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    {{ __('Roles') }}
-                </a>
-            @endif
+        <div id="mobile-menu" class="lg:hidden hidden px-4 pb-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2 rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/70 dark:border-slate-800 shadow-lg">
+                @foreach($navItems as $item)
+                    @if(! $item['can'] || auth()->user()->can($item['can']))
+                        <a href="{{ route($item['route']) }}" class="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition {{ request()->routeIs($item['active']) ? 'bg-slate-900 text-white dark:bg-indigo-600' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                            <x-icon :name="$item['icon']" class="w-4 h-4" />
+                            {{ $item['label'] }}
+                        </a>
+                    @endif
+                @endforeach
+            </div>
         </div>
         @endauth
-        
-        {{-- Right: Search & Profile --}}
-        <div class="flex items-center gap-3">
-            @auth
-                <div class="relative hidden md:block">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </span>
-                    <input type="text" placeholder="Search..." class="w-56 bg-white border border-slate-200/80 pl-9 pr-4 py-2 rounded-full text-sm outline-none focus:border-indigo-500 shadow-sm transition placeholder-slate-400 font-medium">
-                </div>
-                <form action="{{ route('locale.update') }}" method="POST" id="locale-form" class="shrink-0">
-                    @csrf
-                    <input type="hidden" name="locale" id="locale-hidden-input" value="{{ app()->getLocale() }}">
-                    <button type="button" id="locale-toggle-btn"
-                        class="relative flex items-center w-[72px] h-9 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-full shadow-sm hover:border-indigo-300 dark:hover:border-indigo-600 transition-all duration-300 cursor-pointer select-none overflow-hidden group"
-                        title="{{ app()->getLocale() === 'id' ? 'Switch to English' : 'Ganti ke Bahasa Indonesia' }}">
-                        {{-- Sliding indicator pill --}}
-                        <span id="locale-slider" class="absolute top-0.5 w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 shadow-md transition-all duration-300 ease-in-out {{ app()->getLocale() === 'en' ? 'left-[calc(100%-2.125rem-2px)]' : 'left-0.5' }}"></span>
-                        {{-- ID flag (real image) --}}
-                        <span class="relative z-10 flex items-center justify-center w-8 h-8 transition-all duration-300 {{ app()->getLocale() === 'id' ? 'scale-110' : 'scale-90 grayscale opacity-60' }}" id="flag-id">
-                            <img src="https://flagcdn.com/w40/id.png" srcset="https://flagcdn.com/w80/id.png 2x" alt="ID" class="w-5 h-auto rounded-sm shadow-sm">
-                        </span>
-                        {{-- EN flag (real image) --}}
-                        <span class="relative z-10 flex items-center justify-center w-8 h-8 transition-all duration-300 {{ app()->getLocale() === 'en' ? 'scale-110' : 'scale-90 grayscale opacity-60' }}" id="flag-en">
-                            <img src="https://flagcdn.com/w40/gb.png" srcset="https://flagcdn.com/w80/gb.png 2x" alt="EN" class="w-5 h-auto rounded-sm shadow-sm">
-                        </span>
-                    </button>
-                </form>
-                <!-- Live Notification Bell with Frosted Glass Dropdown -->
-                <div class="relative" id="notification-bell-container">
-                    <button id="notification-bell-btn" class="w-9 h-9 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-full shadow-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition relative cursor-pointer focus:outline-none" title="Notifikasi Scraping">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                        <!-- Unread notification dot badge -->
-                        <span id="notification-badge" class="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-rose-500 rounded-full border border-white dark:border-slate-800 hidden animate-pulse"></span>
-                    </button>
-
-                    <!-- Premium Glassmorphic Dropdown Menu -->
-                    <div id="notification-dropdown" class="absolute right-0 mt-3 w-80 max-w-sm rounded-2xl shadow-xl backdrop-blur-md bg-white/95 dark:bg-slate-900/95 border border-slate-200/60 dark:border-slate-800/60 transform origin-top-right scale-95 opacity-0 pointer-events-none transition-all duration-200 ease-out z-50">
-                        <!-- Header -->
-                        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-xs font-bold text-slate-800 dark:text-white">Notifikasi</span>
-                                <span id="unread-count-badge" class="text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-full hidden">0</span>
-                            </div>
-                            <button id="clear-notifications-btn" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer border-0 bg-transparent">Hapus Semua</button>
-                        </div>
-
-                        <!-- Notification Items Container -->
-                        <div id="notification-list" class="max-h-72 overflow-y-auto py-1 divide-y divide-slate-100 dark:divide-slate-800/60">
-                            <!-- Polled notification history will render here -->
-                        </div>
-
-                        <!-- Footer -->
-                        <div class="px-4 py-2.5 text-center border-t border-slate-100 dark:border-slate-800/60">
-                            <span class="text-[9px] font-medium text-slate-400 dark:text-slate-500 tracking-wider uppercase">LeadHunter AI Notification Center</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Premium Glassmorphic User Profile Dropdown -->
-                <div class="relative" id="user-menu-container">
-                    <button id="user-menu-btn" class="flex items-center gap-2 focus:outline-none cursor-pointer group">
-                        <div class="w-9 h-9 rounded-full bg-indigo-50 dark:bg-slate-800 flex items-center justify-center overflow-hidden shadow-sm border border-white dark:border-slate-700 shrink-0 transition group-hover:border-indigo-300">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6366f1&color=fff&rounded=true" alt="User" class="w-full h-full object-cover">
-                        </div>
-                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 hidden md:block group-hover:text-slate-900 dark:group-hover:text-white transition leading-none">{{ Auth::user()->name }}</span>
-                        <svg class="w-3.5 h-3.5 text-slate-400 transition transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                    </button>
-
-                    <!-- User Dropdown Menu Content -->
-                    <div id="user-menu-dropdown" class="absolute right-0 mt-3 w-56 rounded-2xl shadow-xl backdrop-blur-md bg-white/95 dark:bg-slate-900/95 border border-slate-200/60 dark:border-slate-800/60 transform origin-top-right scale-95 opacity-0 pointer-events-none transition-all duration-200 ease-out z-50 overflow-hidden">
-                        <div class="px-4 py-3.5 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/20">
-                            <span class="text-xs font-black text-slate-800 dark:text-white block leading-tight">{{ Auth::user()->name }}</span>
-                            <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block mt-1 truncate">{{ Auth::user()->email }}</span>
-                            
-                            <div class="flex flex-wrap gap-1 mt-2">
-                                @foreach(Auth::user()->roles as $r)
-                                    <span class="text-[8px] font-extrabold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-full uppercase tracking-wider">{{ $r->name }}</span>
-                                @endforeach
-                            </div>
-                        </div>
-                        <div class="py-1">
-                            @if(Auth::user()->is_admin)
-                                <a href="{{ route('users.index') }}" class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                                    <span>{{ __('Kelola Pengguna') }}</span>
-                                </a>
-                                <a href="{{ route('roles.index') }}" class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                                    <span>{{ __('Kelola Hak Akses') }}</span>
-                                </a>
-                                <div class="border-t border-slate-100 dark:border-slate-800/60 my-1"></div>
-                            @endif
-                            <form action="{{ route('logout') }}" method="POST" class="w-full">
-                                @csrf
-                                <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50/50 dark:hover:bg-rose-950/15 transition text-left cursor-pointer border-0 bg-transparent">
-                                    <span>{{ __('Keluar') }}</span>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            @else
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('login') }}" class="text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white px-3.5 py-2 transition">{{ __('Masuk') }}</a>
-                </div>
-            @endauth
-        </div>
     </nav>
 
     {{-- Main Content --}}
-    <main class="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 pt-2">
+    <main class="flex-1 w-full max-w-400 mx-auto p-4 md:p-6 lg:p-8 pt-2">
         @yield('content')
     </main>
 
@@ -290,6 +245,17 @@
 
             updateNavScrolledState();
             window.addEventListener('scroll', updateNavScrolledState, { passive: true });
+
+            // Menu mobile (di bawah breakpoint lg)
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => {
+                    const open = mobileMenu.classList.toggle('hidden') === false;
+                    mobileBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    nav.classList.add('bg-white/85', 'dark:bg-slate-900/85', 'backdrop-blur-md');
+                });
+            }
         })();
 
         class SearchableCombobox {
@@ -469,6 +435,30 @@
             initUserProfileDropdown();
         });
 
+        // Escape teks sebelum dimasukkan ke innerHTML (data lead/notifikasi berasal dari luar: scraping, AI).
+        window.escapeHtml = function(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        window.csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        window.postJson = function(url, body = {}) {
+            return fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': window.csrfToken,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+        };
+
         // Global Dynamic Floating Glassmorphic Toast Notification
         window.showToast = window.showToast || function(message, type = 'success') {
             let container = document.getElementById('toast-container');
@@ -491,7 +481,7 @@
                 
             toast.innerHTML = `
                 ${icon}
-                <span class="text-xs font-semibold leading-relaxed">${message}</span>
+                <span class="text-xs font-semibold leading-relaxed">${window.escapeHtml(message)}</span>
                 <button onclick="this.parentElement.remove()" class="ml-auto text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer border-0 bg-transparent flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -540,7 +530,7 @@
                 clearBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     try {
-                        const response = await fetch('/leads/scrape-status?action=clear');
+                        const response = await window.postJson(@js(route('notifications.clear')));
                         if (response.ok) {
                             checkScrapeStatus();
                         }
@@ -556,7 +546,7 @@
                 
                 // Mark all notifications as read in the database
                 try {
-                    const response = await fetch('/leads/scrape-status?action=mark-read');
+                    const response = await window.postJson(@js(route('notifications.read')));
                     if (response.ok) {
                         checkScrapeStatus();
                     }
@@ -645,8 +635,8 @@
                                 ${iconSvg}
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">${item.title}</p>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-normal mt-0.5">${item.message}</p>
+                                <p class="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">${window.escapeHtml(item.title)}</p>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-normal mt-0.5">${window.escapeHtml(item.message)}</p>
                                 <span class="text-[9px] text-slate-400 dark:text-slate-500 block mt-1 font-medium">${timeAgo(item.created_at)}</span>
                             </div>
                         </div>
@@ -657,7 +647,7 @@
             // Live status polling
             async function checkScrapeStatus() {
                 try {
-                    const response = await fetch("/leads/scrape-status");
+                    const response = await fetch(@js(route('leads.scrape-status')), { headers: { 'Accept': 'application/json' } });
                     if (!response.ok) return;
                     
                     const data = await response.json();
@@ -839,76 +829,5 @@
         </div>
     </div>
 
-    <!-- Google Translate Widget Container (hidden) -->
-    <div id="google_translate_element" style="display:none"></div>
-    <script type="text/javascript">
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'id',
-                includedLanguages: 'id,en',
-                autoDisplay: false
-            }, 'google_translate_element');
-        }
-    </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-    <!-- Language Toggle Button Init -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const toggleBtn = document.getElementById('locale-toggle-btn');
-            const localeInput = document.getElementById('locale-hidden-input');
-            const slider = document.getElementById('locale-slider');
-            const flagId = document.getElementById('flag-id');
-            const flagEn = document.getElementById('flag-en');
-            
-            if (!toggleBtn || !localeInput) return;
-            
-            toggleBtn.addEventListener('click', () => {
-                const currentLocale = localeInput.value;
-                const newLocale = currentLocale === 'id' ? 'en' : 'id';
-                
-                // Update hidden input
-                localeInput.value = newLocale;
-                
-                // Animate slider position
-                if (slider) {
-                    if (newLocale === 'en') {
-                        slider.style.left = 'calc(100% - 2.125rem - 2px)';
-                    } else {
-                        slider.style.left = '2px';
-                    }
-                }
-                
-                // Toggle active flag styles
-                if (flagId && flagEn) {
-                    if (newLocale === 'id') {
-                        flagId.classList.add('scale-110', 'grayscale-0');
-                        flagId.classList.remove('scale-90', 'grayscale', 'opacity-60');
-                        flagEn.classList.add('scale-90', 'grayscale', 'opacity-60');
-                        flagEn.classList.remove('scale-110', 'grayscale-0');
-                    } else {
-                        flagEn.classList.add('scale-110', 'grayscale-0');
-                        flagEn.classList.remove('scale-90', 'grayscale', 'opacity-60');
-                        flagId.classList.add('scale-90', 'grayscale', 'opacity-60');
-                        flagId.classList.remove('scale-110', 'grayscale-0');
-                    }
-                }
-                
-                // Update tooltip
-                toggleBtn.title = newLocale === 'id' ? 'Switch to English' : 'Ganti ke Bahasa Indonesia';
-                
-                // Set googtrans cookie for Google Translate
-                const cookieVal = newLocale === 'en' ? '/id/en' : '/id/id';
-                document.cookie = "googtrans=" + cookieVal + "; path=/";
-                document.cookie = "googtrans=" + cookieVal + "; path=/; domain=" + window.location.hostname;
-                document.cookie = "googtrans=" + cookieVal + "; path=/; domain=." + window.location.hostname;
-                
-                // Short delay for visual animation before page reloads
-                setTimeout(() => {
-                    localeInput.form.submit();
-                }, 250);
-            });
-        });
-    </script>
 </body>
 </html>

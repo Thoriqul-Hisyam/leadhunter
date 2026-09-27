@@ -51,10 +51,20 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permissionSlug): bool
     {
-        return $this->roles()->whereHas('permissions', function($q) use ($permissionSlug) {
-            $q->where('slug', $permissionSlug);
-        })->exists();
+        return in_array($permissionSlug, $this->permissionSlugs(), true);
     }
+
+    /**
+     * Semua slug permission milik user (di-cache per request).
+     */
+    public function permissionSlugs(): array
+    {
+        return $this->permissionSlugsCache ??= Permission::whereHas('roles.users', fn ($q) => $q->where('users.id', $this->id))
+            ->pluck('slug')
+            ->all();
+    }
+
+    protected ?array $permissionSlugsCache = null;
 
     /**
      * Check if the user has any of the specified roles.

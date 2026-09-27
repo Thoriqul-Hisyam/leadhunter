@@ -28,6 +28,23 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'ai' => [
+        'base_url' => rtrim(env('AI_BASE_URL') ?: 'https://api.groq.com/openai/v1', '/'),
+        'key' => env('AI_API_KEY') ?: env('GROQ_API_KEY'),
+        'model' => env('AI_MODEL') ?: 'llama-3.1-8b-instant',
+        'timeout' => (int) env('AI_TIMEOUT', 120),
+        'retries' => (int) env('AI_RETRIES', 2),
+    ],
+
+    'google_places' => [
+        'key' => env('GOOGLE_PLACES_API_KEY'),
+    ],
+
+    'apify' => [
+        'token' => env('APIFY_TOKEN'),
+        'actor' => env('APIFY_ACTOR', 'compass~crawler-google-places'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

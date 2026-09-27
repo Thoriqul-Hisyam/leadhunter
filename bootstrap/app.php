@@ -15,7 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
 
-        $middleware->appendToGroup('web', \App\Http\Middleware\SetLocale::class);
+        // One-click unsubscribe (RFC 8058) dikirim oleh server email tanpa token CSRF; URL-nya sudah bertanda tangan.
+        $middleware->validateCsrfTokens(except: ['unsubscribe/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

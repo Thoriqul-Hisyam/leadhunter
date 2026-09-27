@@ -24,6 +24,21 @@ class MessageTemplate extends Model
     }
 
     /**
+     * Placeholder yang bisa dipakai di template, beserta penjelasannya (ditampilkan di form template).
+     */
+    public const PLACEHOLDERS = [
+        'business_name' => 'Nama bisnis lead',
+        'city' => 'Kota lead',
+        'niche' => 'Niche / bidang lead',
+        'website' => 'Website lead',
+        'phone' => 'Telepon lead',
+        'offer' => 'Penawaran (default dari Pengaturan)',
+        'sender_name' => 'Identitas pengirim, mis. "Thoriq dari Lefateach"',
+        'company_name' => 'Nama usaha Anda',
+        'company_website' => 'Website usaha Anda',
+    ];
+
+    /**
      * Render the template placeholders using the lead and extra data.
      */
     public static function render(string $text, Lead $lead, array $extras = []): string
@@ -34,8 +49,10 @@ class MessageTemplate extends Model
             'niche' => $lead->niche,
             'website' => $lead->website ?: '',
             'phone' => $lead->phone ?: '',
-            'offer' => $extras['offer'] ?? 'Jasa Pembuatan Website',
-            'sender_name' => $extras['sender_name'] ?? 'Thoriq dari Lefateach',
+            'offer' => ($extras['offer'] ?? null) ?: Setting::defaultOffer(),
+            'sender_name' => ($extras['sender_name'] ?? null) ?: Setting::senderIdentity(),
+            'company_name' => Setting::get('company_name', ''),
+            'company_website' => Setting::get('company_website', ''),
         ];
 
         return preg_replace_callback('/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/', function ($matches) use ($placeholders) {

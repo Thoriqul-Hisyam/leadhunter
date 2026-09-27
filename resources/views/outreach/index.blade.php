@@ -37,12 +37,12 @@
 
                     <div id="composer_offer_wrapper" class="md:col-span-1">
                         <label for="composer_offer" class="form-label text-xs">Layanan / Penawaran</label>
-                        <input type="text" name="offer" id="composer_offer" value="Jasa Pembuatan Website Profesional" placeholder="e.g. Pembuatan Website" class="form-input text-xs">
+                        <input type="text" name="offer" id="composer_offer" value="{{ $defaultOffer }}" placeholder="e.g. Pembuatan Website" class="form-input text-xs">
                     </div>
 
                     <div id="composer_sender_wrapper" class="md:col-span-1">
-                        <label for="composer_sender" class="form-label text-xs">Nama Pengirim</label>
-                        <input type="text" name="sender_name" id="composer_sender" value="Thoriq" placeholder="e.g. Thoriq" class="form-input text-xs">
+                        <label for="composer_sender" class="form-label text-xs">Identitas Pengirim</label>
+                        <input type="text" name="sender_name" id="composer_sender" value="{{ $senderName }}" placeholder="e.g. Thoriq dari Lefateach" class="form-input text-xs">
                     </div>
                 </div>
 
@@ -59,8 +59,8 @@
                                 <input type="checkbox" id="select-all-leads" class="form-checkbox h-3.5 w-3.5 rounded text-indigo-600 border-slate-300">
                                 <span>Select All</span>
                             </label>
-                            <button type="button" id="btn-smart-select" class="text-[10px] bg-gradient-to-r from-indigo-600 to-purple-600 px-2.5 py-1 rounded-lg text-white font-bold hover:shadow-lg hover:shadow-indigo-500/20 transition border border-indigo-500/30">
-                                ✨ Smart Select
+                            <button type="button" id="btn-smart-select" class="text-[10px] bg-gradient-to-r from-indigo-600 to-purple-600 px-2.5 py-1 rounded-lg text-white font-bold hover:shadow-lg hover:shadow-indigo-500/20 transition border border-indigo-500/30 inline-flex items-center gap-1">
+                                <x-icon name="sparkles" class="w-3 h-3" /> Smart Select
                             </button>
                         </div>
                     </div>
@@ -194,18 +194,41 @@
             @csrf
             <x-searchable-select name="action" 
                 required="true" 
-                placeholder="⚙️ Bulk Actions" 
+                placeholder="Aksi massal" 
                 :options="[
-                    'delete' => '🗑 Delete Selected',
-                    'status_pending' => 'â³ Mark as Pending',
-                    'status_sent' => '📤 Mark as Sent',
-                    'status_replied' => '💬 Mark as Replied',
-                    'status_failed' => '❌ Mark as Failed'
+                    'send_queue' => 'Kirim Email via Antrean',
+                    'delete' => 'Delete Selected',
+                    'status_pending' => 'Mark as Pending (batalkan antrean)',
+                    'status_sent' => 'Mark as Sent',
+                    'status_replied' => 'Mark as Replied',
+                    'status_failed' => 'Mark as Failed'
                 ]"
                 triggerClass="form-select text-xs w-full sm:w-48 !py-1.5 !rounded-lg" />
             <button type="submit" class="btn-secondary py-1.5 px-4 text-xs font-bold">Apply</button>
+            <a href="{{ route('outreach.export', request()->only(['status', 'campaign_id'])) }}" class="btn-secondary py-1.5 px-3 text-xs font-bold whitespace-nowrap" title="Export hasil outreach ke CSV"><x-icon name="download" class="w-3.5 h-3.5" /> CSV</a>
         </form>
     </div>
+
+    {{-- Filter status --}}
+    <div class="flex flex-wrap items-center gap-2 mb-5">
+        @php $currentStatus = request('status'); @endphp
+        <a href="{{ route('outreach.index', request()->except(['status', 'page'])) }}" class="px-3 py-1 rounded-full text-[11px] font-bold border transition {{ !$currentStatus ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-600' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400' }}">Semua</a>
+        @foreach(['pending' => 'Pending', 'queued' => 'Antrean', 'sent' => 'Sent', 'replied' => 'Replied', 'failed' => 'Failed'] as $value => $label)
+            <a href="{{ route('outreach.index', array_merge(request()->except('page'), ['status' => $value])) }}" class="px-3 py-1 rounded-full text-[11px] font-bold border transition {{ $currentStatus === $value ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-600' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400' }}">{{ $label }}</a>
+        @endforeach
+    </div>
+
+    @if($fakeMailer)
+        <div class="alert-error mb-5">
+            <span><strong>MAIL_MAILER={{ config('mail.default') }}:</strong> email hanya ditulis ke <code>storage/logs/laravel.log</code>, tidak benar-benar terkirim. Isi konfigurasi SMTP Gmail di <code>.env</code> untuk mengirim sungguhan.</span>
+        </div>
+    @endif
+
+    @if($queuedCount > 0)
+        <div class="mb-5 p-3 rounded-xl border border-violet-500/20 bg-violet-500/5 text-xs text-violet-700 dark:text-violet-300 font-semibold">
+            <x-icon name="clock" class="w-4 h-4 inline-block align-[-3px] mr-1" />{{ $queuedCount }} email di antrean kirim (maks. {{ config('leadhunter.sending.hourly_limit') }}/jam). Antrean diproses oleh scheduler; pastikan <code>composer run dev</code> (atau <code>php artisan schedule:work</code> + queue worker) berjalan.
+        </div>
+    @endif
 
     @if(session('success'))
         <div class="alert-success mb-6 shadow-lg shadow-emerald-500/10">
@@ -277,8 +300,11 @@
                             
                             @if($msg->status == 'pending')
                                 <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button type="button" 
-                                            onclick="openEditModal({{ $msg->id }}, `{{ htmlspecialchars($msg->subject, ENT_QUOTES) }}`, `{{ htmlspecialchars($msg->message, ENT_QUOTES) }}`)"
+                                    <button type="button"
+                                            data-id="{{ $msg->id }}"
+                                            data-subject="{{ $msg->subject }}"
+                                            data-message="{{ $msg->message }}"
+                                            onclick="openEditModal(this.dataset.id, this.dataset.subject, this.dataset.message)"
                                             class="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-indigo-500/20 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition" title="Edit Message">
                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -295,6 +321,7 @@
                                 {{ $msg->status == 'replied' ? 'badge-replied' : '' }}
                                 {{ $msg->status == 'pending' ? 'badge-pending' : '' }}
                                 {{ $msg->status == 'failed' ? 'badge-failed' : '' }}
+                                {{ $msg->status == 'queued' ? 'badge-queued' : '' }}
                             ">
                                 @if($msg->status == 'sent')
                                     <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -317,6 +344,15 @@
                             </span>
                             @if($msg->sent_at)
                                 <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{{ $msg->sent_at->format('M d, H:i') }}</span>
+                            @endif
+                            @if($msg->status === 'queued')
+                                <span class="text-[10px] text-violet-600 dark:text-violet-400 font-medium">{{ $msg->scheduled_at ? 'Jadwal: '.$msg->scheduled_at->format('d M H:i') : 'Sedang diproses...' }}</span>
+                            @endif
+                            @if($msg->followup_of_id)
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1"><x-icon name="reply" class="w-3 h-3" /> Follow-up</span>
+                            @endif
+                            @if($msg->status === 'failed' && $msg->last_error)
+                                <span class="text-[10px] text-rose-600 dark:text-rose-400 max-w-44 line-clamp-2" title="{{ $msg->last_error }}">{{ $msg->last_error }}</span>
                             @endif
                         </div>
                     </td>
@@ -341,6 +377,14 @@
                                         </button>
                                     @endif
                                 </form>
+                            @elseif($msg->status == 'queued')
+                                <form action="{{ route('outreach.status', $msg->id) }}" method="POST" class="inline">
+                                    @csrf
+                                    <input type="hidden" name="status" value="pending">
+                                    <button type="submit" class="btn-secondary py-1 px-3 text-[11px] font-bold rounded-lg" title="Keluarkan dari antrean kirim">
+                                        <span>Batalkan Antrean</span>
+                                    </button>
+                                </form>
                             @elseif($msg->status == 'sent')
                                 <div class="flex gap-2 justify-end">
                                     <form action="{{ route('outreach.status', $msg->id) }}" method="POST" class="inline">
@@ -360,7 +404,7 @@
                                 </div>
                             @elseif($msg->status == 'replied')
                                 <div class="flex flex-col items-end gap-1.5">
-                                    <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/15 px-2 py-1 rounded">🎉 Deal Closed</span>
+                                    <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/15 px-2 py-1 rounded"><x-icon name="trophy" class="w-3.5 h-3.5" /> Deal Closed</span>
                                     <form action="{{ route('outreach.status', $msg->id) }}" method="POST" class="inline">
                                         @csrf
                                         <input type="hidden" name="status" value="pending">
@@ -440,7 +484,7 @@
         {{-- Body --}}
         <div class="p-6">
             <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3.5 mb-5 flex items-start gap-3">
-                <span class="text-amber-500">💡</span>
+                <span class="text-amber-500"><x-icon name="light-bulb" class="w-4 h-4" /></span>
                 <p class="text-xs text-amber-700 dark:text-amber-200/80 leading-relaxed">You are editing the raw message. Be careful with formatting. Changes will be saved permanently for this specific outreach attempt.</p>
             </div>
 
@@ -462,8 +506,8 @@
                     </label>
                     <div class="flex flex-col gap-2">
                         <textarea id="customPrompt" rows="2" class="form-input text-xs w-full" placeholder="Optional: Enter a custom prompt (e.g. 'Make it more funny', 'Mention our discount promo')"></textarea>
-                        <button type="button" id="btnRegenerate" onclick="regenerateMessage()" class="btn-primary py-2 text-xs self-end">
-                            ✨ Regenerate Now
+                        <button type="button" id="btnRegenerate" onclick="regenerateMessage()" class="btn-primary py-2 text-xs self-end inline-flex items-center gap-1.5">
+                            <x-icon name="sparkles" class="w-3.5 h-3.5" /> Regenerate Now
                         </button>
                     </div>
                 </div>
@@ -499,10 +543,7 @@
         currentEditId = id;
         editForm.action = `/outreach/${id}`;
         editSubject.value = subject || '';
-        
-        const txt = document.createElement('textarea');
-        txt.innerHTML = message;
-        editMessage.value = txt.value;
+        editMessage.value = message || '';
 
         modal.classList.remove('hidden');
         setTimeout(() => {
@@ -901,7 +942,7 @@
             return `
                 <div class="glass-card p-5 border border-slate-200 dark:border-slate-800 space-y-4">
                     <div class="flex justify-between items-center pb-2 border-b dark:border-slate-800">
-                        <span class="text-xs font-bold text-slate-800 dark:text-white">${name}</span>
+                        <span class="text-xs font-bold text-slate-800 dark:text-white">${escapeHtml(name)}</span>
                         <div class="h-4 bg-slate-200 dark:bg-slate-800 w-16 rounded animate-pulse"></div>
                     </div>
                     <div class="space-y-2 animate-pulse">
@@ -954,11 +995,11 @@
                 <div class="composer-lead-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-indigo-500/25 transition-all space-y-4" data-lead-id="${item.lead_id}">
                     <div class="flex justify-between items-start border-b border-slate-100 dark:border-slate-800/80 pb-3">
                         <div>
-                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100">${item.business_name}</h4>
-                            <p class="text-[10px] text-slate-400 mt-0.5">📍 ${item.city} &bull; <span class="capitalize">${item.niche}</span> &bull; ${item.email || item.phone || 'No Contact listed'}</p>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100">${escapeHtml(item.business_name)}</h4>
+                            <p class="text-[10px] text-slate-400 mt-0.5"><svg class="w-3 h-3 align-[-2px] inline-block shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg> ${escapeHtml(item.city)} &bull; <span class="capitalize">${escapeHtml(item.niche)}</span> &bull; ${escapeHtml(item.email || item.phone || 'No Contact listed')}</p>
                         </div>
                         <div class="flex gap-1.5 items-center">
-                            ${item.is_fallback ? `<span class="px-2 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/15 rounded animate-pulse" title="${item.fallback_reason}">⚠️ AI Fallback</span>` : ''}
+                            ${item.is_fallback ? `<span class="px-2 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/15 rounded inline-flex items-center gap-1" title="${escapeHtml(item.fallback_reason)}"><svg class="w-3 h-3 inline-block shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg> AI Fallback</span>` : ''}
                             <span class="px-2 py-0.5 text-[9px] font-bold rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/15 uppercase">${type}</span>
                         </div>
                     </div>
@@ -966,13 +1007,13 @@
                     ${type === 'email' ? `
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Subject Line</label>
-                        <input type="text" class="composer-subject-input form-input text-xs" value="${item.subject || ''}" placeholder="Subject Line">
+                        <input type="text" class="composer-subject-input form-input text-xs" value="${escapeHtml(item.subject || '')}" placeholder="Subject Line">
                     </div>
                     ` : ''}
                     
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Message Body</label>
-                        <textarea class="composer-message-textarea form-input text-xs font-sans leading-relaxed resize-y" rows="7">${item.message}</textarea>
+                        <textarea class="composer-message-textarea form-input text-xs font-sans leading-relaxed resize-y" rows="7">${escapeHtml(item.message)}</textarea>
                     </div>
 
                     {{-- Dynamic on-the-fly Polish --}}

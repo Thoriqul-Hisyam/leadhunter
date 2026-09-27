@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AiException;
 use App\Models\MessageTemplate;
+use App\Services\AiService;
 use Illuminate\Http\Request;
 
 class MessageTemplateController extends Controller
@@ -118,6 +120,40 @@ class MessageTemplateController extends Controller
         $template->delete();
 
         return redirect()->route('templates.index')->with('success', 'Template deleted successfully!');
+    }
+
+    /**
+     * Tulis draf template dengan AI (dipanggil dari form create/edit, hasilnya diisi ke form).
+     */
+    public function generate(Request $request, AiService $ai)
+    {
+        $data = $request->validate([
+            'channel' => 'required|in:email,whatsapp',
+            'niche' => 'required|string|max:255',
+            'language' => 'required|in:id,en',
+            'tone' => 'required|in:formal,casual,friendly',
+            'offer' => 'nullable|string|max:255',
+            'instruction' => 'nullable|string|max:1000',
+        ], [
+            'niche.required' => 'Isi niche terlebih dahulu (misalnya: klinik gigi, cafe).',
+        ]);
+
+        set_time_limit(300);
+
+        try {
+            $result = $ai->generateTemplate(
+                $data['channel'],
+                $data['niche'],
+                $data['tone'],
+                $data['language'],
+                $data['offer'] ?? null,
+                $data['instruction'] ?? null
+            );
+        } catch (AiException $e) {
+            return response()->json(['status' => 'error', 'message' => 'Gagal generate template: '.$e->getMessage()], 500);
+        }
+
+        return response()->json(['status' => 'success'] + $result);
     }
 
     /**

@@ -28,9 +28,9 @@ class LoginController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required'],
         ], [
-            'email.required' => 'Email wajib diisi ✉️',
-            'email.email' => 'Format email tidak valid ✉️',
-            'password.required' => 'Password wajib diisi 🔑',
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
+            'password.required' => 'Password wajib diisi',
         ]);
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
@@ -46,15 +46,15 @@ class LoginController extends Controller
             )) {
                 $request->session()->forget('url.intended');
                 return redirect()->route('dashboard')
-                    ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '! ✨');
+                    ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
             }
 
             return redirect()->intended(route('dashboard'))
-                ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '! ✨');
+                ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password yang Anda masukkan salah ❌',
+            'email' => 'Email atau password yang Anda masukkan salah',
         ])->onlyInput('email');
     }
 
@@ -69,6 +69,6 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login')
-            ->with('success', 'Anda telah berhasil keluar. Sampai jumpa kembali! 👋');
+            ->with('success', 'Anda telah berhasil keluar. Sampai jumpa kembali!');
     }
 }

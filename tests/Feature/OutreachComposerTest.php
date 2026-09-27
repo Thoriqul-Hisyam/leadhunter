@@ -4,9 +4,8 @@ use App\Models\Campaign;
 use App\Models\Lead;
 use App\Models\MessageTemplate;
 use App\Models\OutreachMessage;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+beforeEach(fn () => loginAs());
 
 test('it filters active templates by niche and channel', function () {
     MessageTemplate::create([

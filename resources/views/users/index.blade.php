@@ -49,7 +49,7 @@
                     class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition font-medium">
                 
                 @if(request('search'))
-                    <a href="{{ route('users.index') }}" class="absolute right-3 text-slate-400 hover:text-slate-600 text-xs">✕</a>
+                    <a href="{{ route('users.index') }}" class="absolute right-3 text-slate-400 hover:text-slate-600" aria-label="Hapus pencarian"><x-icon name="x-mark" class="w-3.5 h-3.5" /></a>
                 @endif
             </form>
 
@@ -131,7 +131,7 @@
                         <tr>
                             <td colspan="5" class="py-8 px-4 text-center">
                                 <div class="flex flex-col items-center justify-center text-slate-400">
-                                    <span class="text-3xl mb-2">🔍</span>
+                                    <span class="mb-2 text-slate-300 dark:text-slate-600"><x-icon name="search" class="w-8 h-8" /></span>
                                     <span class="text-xs font-semibold">Tidak ada pengguna yang cocok</span>
                                 </div>
                             </td>

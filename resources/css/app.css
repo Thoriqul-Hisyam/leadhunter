@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Kelas dark: mengikuti toggle tema (atribut data-theme di <html>), bukan pengaturan OS. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -496,6 +499,13 @@ body.app-body::before {
 [data-theme="dark"] .badge-sent { color: #60a5fa; }
 [data-theme="dark"] .badge-replied { color: #34d399; }
 [data-theme="dark"] .badge-failed { color: #f87171; }
+
+.badge-queued {
+    background: rgba(139, 92, 246, 0.12);
+    color: #7c3aed;
+    border: 1px solid rgba(139, 92, 246, 0.18);
+}
+[data-theme="dark"] .badge-queued { color: #a78bfa; }
 
 /* ===== ALERTS ===== */
 .alert-success {

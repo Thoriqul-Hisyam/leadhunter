@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penawaran Website Profesional - Lefateach</title>
+    <title>{{ $companyName ?: config('app.name') }}</title>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -117,33 +117,49 @@
         <tr>
             <td align="center">
                 <table class="container" cellpadding="0" cellspacing="0" role="presentation">
+                    @if($companyName)
                     <tr>
                         <td class="header">
-                            <div class="badge">Lefateach</div>
-                            <h1>#1 Jasa Website di Indonesia</h1>
+                            <div class="badge">{{ $companyName }}</div>
+                            @if($companyTagline)
+                                <h1>{{ $companyTagline }}</h1>
+                            @endif
                         </td>
                     </tr>
+                    @endif
                     <tr>
                         <td class="content">
                             {!! nl2br(e($messageText)) !!}
-                            
+
+                            @if($companyPhone || $companyWebsite)
                             <div class="contact-card">
                                 <h3>Hubungi Kami</h3>
+                                @if($companyPhone)
                                 <div class="contact-item">
-                                    <strong>Telepon:</strong> 
-                                    <a href="tel:0895365500805">0895-3655-00805</a>
+                                    <strong>Telepon:</strong>
+                                    <a href="tel:{{ preg_replace('/[^0-9+]/', '', $companyPhone) }}">{{ $companyPhone }}</a>
                                 </div>
+                                @endif
+                                @if($companyWebsite)
                                 <div class="contact-item">
-                                    <strong>Website:</strong> 
-                                    <a href="https://lefateach.com" target="_blank">lefateach.com</a>
+                                    <strong>Website:</strong>
+                                    <a href="{{ \App\Helpers\Url::normalize($companyWebsite) }}" target="_blank">{{ preg_replace('#^https?://#', '', $companyWebsite) }}</a>
                                 </div>
+                                @endif
                             </div>
+                            @endif
                         </td>
                     </tr>
                     <tr>
                         <td class="footer">
-                            <p style="margin: 0;">&copy; {{ date('Y') }} <strong>Lefateach</strong>. All rights reserved.</p>
-                            <p style="margin: 5px 0 0 0;">Membangun kehadiran digital yang profesional dan terpercaya.</p>
+                            @if($companyName)
+                                <p style="margin: 0;">&copy; {{ date('Y') }} <strong>{{ $companyName }}</strong>. All rights reserved.</p>
+                            @endif
+                            @if($unsubscribeUrl)
+                                <p style="margin: 8px 0 0 0; font-size: 11px;">Tidak ingin menerima email seperti ini lagi? <a href="{{ $unsubscribeUrl }}">Berhenti berlangganan</a></p>
+                            @else
+                                <p style="margin: 8px 0 0 0; font-size: 11px;">Tidak ingin menerima email seperti ini lagi? Balas email ini dengan kata <strong>BERHENTI</strong>.</p>
+                            @endif
                         </td>
                     </tr>
                 </table>

@@ -45,7 +45,7 @@
                 
                 @if(in_array($role->slug, ['admin', 'user']))
                     <span class="block text-[10px] text-amber-600 dark:text-amber-500 mb-2 font-medium flex items-center gap-1">
-                        <span>⚠️</span>
+                        <span><x-icon name="warning" class="w-3.5 h-3.5" /></span>
                         <span>Role bawaan sistem terproteksi. Slug sistem tidak dapat diubah agar tidak merusak otorisasi program.</span>
                     </span>
                     <div class="relative">
