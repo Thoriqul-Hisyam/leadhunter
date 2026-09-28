@@ -11,7 +11,11 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
 
-beforeEach(fn () => loginAs());
+beforeEach(function () {
+    loginAs();
+    // Senin 10:00 WIB: di dalam jendela kirim default
+    $this->travelTo(\Illuminate\Support\Carbon::parse('2026-09-28 10:00:00', 'Asia/Jakarta'));
+});
 
 function outreachMessage(array $attributes = [], array $leadAttributes = []): OutreachMessage
 {
@@ -109,7 +113,7 @@ test('bulk send queues emails with increasing random gaps and skips non-emails',
     $noEmail = outreachMessage([], ['email' => null]);
 
     $this->post(route('outreach.bulk'), ['ids' => [$a->id, $b->id, $c->id, $wa->id, $noEmail->id], 'action' => 'send_queue'])
-        ->assertSessionHas('success', fn ($msg) => str_contains($msg, '3 email masuk antrean') && str_contains($msg, '2 dilewati'));
+        ->assertSessionHas('success', fn ($msg) => str_contains($msg, '3 email (maks.') && str_contains($msg, '2 dilewati'));
 
     [$a, $b, $c] = [$a->fresh(), $b->fresh(), $c->fresh()];
     expect([$a->status, $b->status, $c->status])->toBe(['queued', 'queued', 'queued'])
@@ -121,7 +125,7 @@ test('bulk send queues emails with increasing random gaps and skips non-emails',
         ->and($gap2)->toBeGreaterThanOrEqual(60)->toBeLessThanOrEqual(120);
 });
 
-test('the scheduler dispatches due emails within the hourly limit', function () {
+test('the scheduler dispatches due emails one per run within the hourly limit', function () {
     Queue::fake();
     config(['leadhunter.sending.hourly_limit' => 3]);
 
@@ -130,16 +134,20 @@ test('the scheduler dispatches due emails within the hourly limit', function () 
     $due = collect(range(1, 3))->map(fn ($i) => outreachMessage(['status' => 'queued', 'scheduled_at' => now()->subMinutes(5 - $i)]));
     $future = outreachMessage(['status' => 'queued', 'scheduled_at' => now()->addHour()]);
 
+    // Satu pesan per putaran: antrean yang tertunda tidak terkirim sekaligus
     $this->artisan('outreach:send-due')->assertSuccessful();
-
-    Queue::assertPushed(SendOutreachJob::class, 2);
+    Queue::assertPushed(SendOutreachJob::class, 1);
     expect($due[0]->fresh()->scheduled_at)->toBeNull()
-        ->and($due[2]->fresh()->scheduled_at)->not->toBeNull()
-        ->and($future->fresh()->scheduled_at)->not->toBeNull();
+        ->and($due[1]->fresh()->scheduled_at)->not->toBeNull();
 
-    // Pesan yang sudah diserahkan ke worker ikut dihitung → tidak ada kuota tersisa
     $this->artisan('outreach:send-due');
     Queue::assertPushed(SendOutreachJob::class, 2);
+
+    // Pesan yang sedang diproses worker ikut dihitung → kuota habis
+    $this->artisan('outreach:send-due');
+    Queue::assertPushed(SendOutreachJob::class, 2);
+    expect($due[2]->fresh()->scheduled_at)->not->toBeNull()
+        ->and($future->fresh()->scheduled_at)->not->toBeNull();
 });
 
 test('the send job skips messages that were taken out of the queue', function () {

@@ -153,7 +153,7 @@
                     <tr>
                         <td class="footer">
                             @if($companyName)
-                                <p style="margin: 0;">&copy; {{ date('Y') }} <strong>{{ $companyName }}</strong>. All rights reserved.</p>
+                                <p style="margin: 0;">&copy; {{ date('Y') }} <strong>{{ $companyName }}</strong>. Hak cipta dilindungi.</p>
                             @endif
                             @if($unsubscribeUrl)
                                 <p style="margin: 8px 0 0 0; font-size: 11px;">Tidak ingin menerima email seperti ini lagi? <a href="{{ $unsubscribeUrl }}">Berhenti berlangganan</a></p>

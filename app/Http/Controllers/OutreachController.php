@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\AiException;
 use App\Exceptions\OutreachSendException;
+use App\Helpers\LeadSelection;
 use App\Models\Campaign;
 use App\Models\Lead;
 use App\Models\MessageTemplate;
 use App\Models\OutreachMessage;
 use App\Models\Setting;
 use App\Services\AiService;
+use App\Services\MessageQualityGate;
 use App\Services\OutreachGenerator;
 use App\Services\OutreachSender;
 use Illuminate\Http\Request;
@@ -32,13 +34,17 @@ class OutreachController extends Controller
 
         $messages = $query->paginate(20)->withQueryString();
         $campaigns = Campaign::all();
-        $leads = Lead::all();
+        // Daftar lead composer dimuat bertahap lewat AJAX (campaigns.leads.filter); di sini hanya opsi filter.
+        $leadNiches = Lead::whereNotNull('niche')->where('niche', '!=', '')->distinct()->orderBy('niche')->pluck('niche');
+        $leadCities = Lead::whereNotNull('city')->where('city', '!=', '')->distinct()->orderBy('city')->pluck('city');
+        $totalLeads = Lead::count();
         $senderName = Setting::senderIdentity();
         $defaultOffer = Setting::defaultOffer();
         $queuedCount = OutreachMessage::where('status', 'queued')->count();
         $fakeMailer = app(OutreachSender::class)->isFakeMailer();
+        $waGatewayActive = app(OutreachSender::class)->whatsAppGatewayActive();
 
-        return view('outreach.index', compact('messages', 'campaigns', 'leads', 'senderName', 'defaultOffer', 'queuedCount', 'fakeMailer'));
+        return view('outreach.index', compact('messages', 'campaigns', 'leadNiches', 'leadCities', 'totalLeads', 'senderName', 'defaultOffer', 'queuedCount', 'fakeMailer', 'waGatewayActive'));
     }
 
     /**
@@ -49,7 +55,7 @@ class OutreachController extends Controller
     {
         $request->validate([
             'campaign_id' => 'required|exists:campaigns,id',
-            'lead_ids' => 'required|array',
+            'lead_ids' => 'required_without:select_all|array',
             'lead_ids.*' => 'exists:leads,id',
             'type' => 'nullable|in:email,whatsapp',
         ]);
@@ -57,11 +63,14 @@ class OutreachController extends Controller
         $campaign = Campaign::findOrFail($request->campaign_id);
         $type = $request->input('type', 'email');
 
-        $result = $generator->generate($campaign, Lead::whereIn('id', $request->lead_ids)->get(), [$type], 'ai');
+        // Centang per baris, atau "pilih semua hasil filter" di tabel Leads
+        $leadIds = LeadSelection::ids($request);
+
+        $result = $generator->generate($campaign, Lead::whereIn('id', $leadIds)->get(), [$type], 'ai');
 
         $message = "{$result['queued']} pesan ".ucfirst($type).' sedang digenerate AI di background.';
         if ($result['skipped']) {
-            $message .= " {$result['skipped']} lead dilewati karena sudah punya draft {$type} di campaign ini.";
+            $message .= " {$result['skipped']} lead dilewati (sudah punya draft {$type} di campaign ini, atau tidak punya ".($type === 'whatsapp' ? 'nomor telepon' : 'email').').';
         }
 
         return redirect()->route('campaigns.show', $campaign)->with('success', $message);
@@ -93,6 +102,16 @@ class OutreachController extends Controller
 
     public function send(Request $request, OutreachMessage $outreachMessage, OutreachSender $sender)
     {
+        if ($outreachMessage->type === 'whatsapp' && $sender->whatsAppGatewayActive()) {
+            try {
+                $sender->sendWhatsApp($outreachMessage);
+            } catch (OutreachSendException $e) {
+                return $this->respond($request, false, $e->getMessage(), 422);
+            }
+
+            return $this->respond($request, true, 'WhatsApp terkirim lewat '.ucfirst((string) config('leadhunter.whatsapp.driver')).'.');
+        }
+
         if ($outreachMessage->type === 'whatsapp') {
             try {
                 $url = $sender->whatsAppUrl($outreachMessage);
@@ -144,9 +163,11 @@ class OutreachController extends Controller
             return redirect()->back()->with('error', 'Pesan yang sudah terkirim tidak bisa diedit.');
         }
 
+        // Disimpan setelah diedit/dicek pengguna = sudah direview.
         $outreachMessage->update([
             'subject' => $request->subject,
             'message' => $request->message,
+            'needs_review' => false,
         ]);
 
         return redirect()->back()->with('success', 'Pesan outreach berhasil diperbarui.');
@@ -177,13 +198,21 @@ class OutreachController extends Controller
 
         if ($request->action === 'send_queue') {
             $result = $sender->queue($messages);
-            $limit = config('leadhunter.sending.hourly_limit');
-            $message = "{$result['queued']} email masuk antrean kirim (maks. {$limit}/jam, dengan jeda acak).";
+            $parts = [];
+            foreach (['email' => 'email', 'whatsapp' => 'WhatsApp'] as $channel => $label) {
+                if ($result['by_channel'][$channel] > 0) {
+                    $limits = $sender->limits($channel);
+                    $parts[] = "{$result['by_channel'][$channel]} {$label} (maks. {$limits['hourly']}/jam, {$limits['daily']}/hari)";
+                }
+            }
+            $message = $parts
+                ? implode(' dan ', $parts).' masuk antrean kirim dengan jeda acak, hanya di jam kirim.'
+                : 'Tidak ada pesan yang masuk antrean.';
             if ($result['last_at']) {
-                $message .= ' Perkiraan selesai: '.$result['last_at']->format('d M H:i').'.';
+                $message .= ' Perkiraan selesai: '.$result['last_at']->translatedFormat('d M H:i').'.';
             }
             if ($result['skipped']) {
-                $message .= " {$result['skipped']} dilewati (bukan email, sudah terkirim, atau lead tanpa email).";
+                $message .= " {$result['skipped']} dilewati (sudah terkirim, perlu review, tidak ada kontak yang cocok, nomor kantor, atau WhatsApp gateway belum aktif).";
             }
 
             return redirect()->back()->with('success', $message);
@@ -192,7 +221,7 @@ class OutreachController extends Controller
         $status = str_replace('status_', '', $request->action);
         $messages->each->setStatus($status);
 
-        return redirect()->back()->with('success', $messages->count().' pesan ditandai sebagai '.ucfirst($status).'.');
+        return redirect()->back()->with('success', $messages->count().' pesan ditandai sebagai '.OutreachMessage::statusLabelFor($status).'.');
     }
 
     public function getTemplates(Request $request)
@@ -217,7 +246,7 @@ class OutreachController extends Controller
         ]);
     }
 
-    public function composePreview(Request $request, AiService $ai)
+    public function composePreview(Request $request, AiService $ai, MessageQualityGate $gate)
     {
         $request->validate([
             'lead_ids' => 'required|array',
@@ -254,9 +283,9 @@ class OutreachController extends Controller
         // Mode AI & hybrid: semua lead dikirim ke AI sekaligus (paralel), bukan satu per satu.
         $aiResults = [];
         if ($mode === 'ai') {
-            $aiResults = $ai->generateMany($leads->map(fn ($lead) => $ai->outreachPrompt($lead, $type, $context))->all(), ['temperature' => 0.8]);
+            $aiResults = $ai->generateMany($leads->map(fn ($lead) => $ai->outreachPrompt($lead, $type, $context))->all(), ['temperature' => 0.8, 'feature' => 'outreach']);
         } elseif ($mode === 'hybrid' && $template) {
-            $aiResults = $ai->generateMany($leads->map(fn ($lead) => $ai->polishDraftPrompt($lead, MessageTemplate::render($template->body, $lead, $extras), $context))->all());
+            $aiResults = $ai->generateMany($leads->map(fn ($lead) => $ai->polishDraftPrompt($lead, MessageTemplate::render($template->body, $lead, $extras), $context))->all(), ['feature' => 'polish']);
         }
 
         $previews = [];
@@ -308,6 +337,8 @@ class OutreachController extends Controller
                 'message' => trim($message),
                 'is_fallback' => $isFallback,
                 'fallback_reason' => $fallbackReason,
+                'variant' => $mode === 'ai' && ! $isFallback ? $ai->variantFor($lead, $context) : null,
+                'problems' => $isFallback || $mode === 'template' ? [] : $gate->problems(trim($message), $subject, $lead, $type),
             ];
         }
 
@@ -328,6 +359,7 @@ class OutreachController extends Controller
             'messages.*.lead_id' => 'required|exists:leads,id',
             'messages.*.subject' => 'nullable|string|max:255',
             'messages.*.message' => 'required|string',
+            'messages.*.variant' => 'nullable|in:'.implode(',', array_keys(AiService::PROMPT_VARIANTS)),
         ]);
 
         $savedCount = 0;
@@ -346,6 +378,8 @@ class OutreachController extends Controller
                     'message' => $msg['message'],
                     'mode' => $request->mode,
                     'template_id' => $request->template_id,
+                    'prompt_variant' => $request->mode === 'ai' ? ($msg['variant'] ?? null) : null,
+                    'needs_review' => false, // sudah dilihat & disetujui di preview composer
                 ]
             );
             $savedCount++;

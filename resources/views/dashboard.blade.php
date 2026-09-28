@@ -29,10 +29,39 @@
 
 <div class="viz-root grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
 
+    {{-- ===== ONBOARDING ===== --}}
+    @if($onboarding)
+        @php $doneCount = collect($onboarding)->where('done', true)->count(); @endphp
+        <div class="lg:col-span-12 dash-card">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-900 dark:text-white text-base">Mulai di sini</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ $doneCount }} dari {{ count($onboarding) }} langkah selesai. Kartu ini hilang setelah semua beres.</p>
+                </div>
+                <div class="w-full sm:w-48 h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div class="h-full rounded-full" style="width: {{ round($doneCount / count($onboarding) * 100) }}%; background: var(--viz-series-1);"></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                @foreach($onboarding as $step)
+                    <a href="{{ $step['url'] }}" class="flex items-start gap-3 p-3 rounded-xl border transition {{ $step['done'] ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700' }}">
+                        <span class="mt-0.5 {{ $step['done'] ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600' }}">
+                            <x-icon name="check-circle" class="w-5 h-5" />
+                        </span>
+                        <span>
+                            <span class="block text-sm font-bold {{ $step['done'] ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-800 dark:text-slate-100' }}">{{ $step['label'] }}</span>
+                            <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{{ $step['hint'] }}</span>
+                        </span>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     {{-- ===== KPI ROW ===== --}}
     <div class="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="dash-card py-5">
-            <div class="kpi-label">Total Leads</div>
+            <div class="kpi-label">Total Lead</div>
             <div class="kpi-value mt-2">{{ number_format($stats['total_leads']) }}</div>
             <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
                 {{ number_format($stats['leads_with_email']) }} punya email · {{ number_format($stats['leads_without_website']) }} tanpa website
@@ -42,7 +71,7 @@
             <div class="kpi-label">Outreach Terkirim</div>
             <div class="kpi-value mt-2">{{ number_format($stats['delivered']) }}</div>
             <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
-                Sent rate <strong class="text-slate-700 dark:text-slate-200">{{ $stats['sent_rate'] }}%</strong> dari {{ number_format($stats['total_outreach']) }} pesan
+                Tingkat terkirim <strong class="text-slate-700 dark:text-slate-200">{{ $stats['sent_rate'] }}%</strong> dari {{ number_format($stats['total_outreach']) }} pesan
             </div>
         </div>
         <div class="dash-card py-5">
@@ -81,7 +110,7 @@
                     <div class="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-500/10 flex items-center justify-center text-sky-500">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </div>
-                    <span class="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-tight">Cari<br>Leads</span>
+                    <span class="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-tight">Cari<br>Lead</span>
                 </a>
                 @endcan
                 @can('manage_templates')
@@ -178,7 +207,7 @@
             {{-- Upcoming queue --}}
             <div class="dash-card">
                 <h3 class="font-bold text-slate-900 dark:text-white text-base">Antrean Kirim</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-4">Email berikutnya (maks. {{ config('leadhunter.sending.hourly_limit') }}/jam).</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-4">Pesan berikutnya, dikirim di jam kirim {{ config('leadhunter.sending.window_start') }}–{{ config('leadhunter.sending.window_end') }} (email maks. {{ config('leadhunter.sending.hourly_limit') }}/jam, WhatsApp maks. {{ config('leadhunter.whatsapp.hourly_limit') }}/jam).</p>
                 <div class="space-y-2.5">
                     @forelse($upcoming as $msg)
                         <div class="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
@@ -186,10 +215,10 @@
                                 <div class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{{ $msg->lead?->business_name }}</div>
                                 <div class="text-[10px] text-slate-500 dark:text-slate-400 truncate">{{ $msg->campaign?->name }}</div>
                             </div>
-                            <span class="text-[10px] font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap">{{ $msg->scheduled_at ? $msg->scheduled_at->format('d M H:i') : 'diproses' }}</span>
+                            <span class="text-[10px] font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap">{{ $msg->scheduled_at ? $msg->scheduled_at->translatedFormat('d M H:i') : 'diproses' }}</span>
                         </div>
                     @empty
-                        <p class="text-xs text-slate-400">Antrean kosong. Pilih pesan di halaman Outreach, lalu jalankan aksi "Kirim Email via Antrean".</p>
+                        <p class="text-xs text-slate-400">Antrean kosong. Pilih pesan di halaman Outreach, lalu jalankan aksi "Kirim via Antrean".</p>
                     @endforelse
                 </div>
             </div>
@@ -251,6 +280,25 @@
                         </div>
                     @endforeach
                 </div>
+
+                <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-6">Varian Gaya Pesan AI</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-3">Lead dibagi rata ke dua gaya pembuka (bisa dimatikan di Pengaturan).</p>
+                <div class="space-y-3">
+                    @foreach($variantStats as $v)
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="font-semibold text-slate-600 dark:text-slate-300">{{ $v['label'] }}</span>
+                                <span class="text-slate-500 dark:text-slate-400"><strong class="text-slate-800 dark:text-slate-100">{{ $v['reply_rate'] }}%</strong> · {{ $v['replied'] }}/{{ $v['delivered'] }}</span>
+                            </div>
+                            <div class="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                <div class="h-full rounded-full" style="width: {{ min(100, $v['reply_rate']) }}%; background: var(--viz-series-1);"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                @if($variantStats->sum('delivered') > 0 && $variantStats->min('delivered') < 30)
+                    <p class="text-[10px] text-slate-400 mt-3">Sampel masih kecil (&lt; 30 pesan per varian); tunggu lebih banyak data sebelum memilih pemenang.</p>
+                @endif
             </div>
 
             <div class="dash-card">
@@ -272,6 +320,53 @@
             </div>
         </div>
 
+        {{-- Sequence & subjek --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="dash-card">
+                <h3 class="font-bold text-slate-900 dark:text-white text-base">Reply Rate per Langkah</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-4">Pesan pembuka vs follow-up. Balasan otomatis tidak dihitung.</p>
+                <div class="space-y-3">
+                    @forelse($stepStats as $s)
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="font-semibold text-slate-600 dark:text-slate-300">{{ $s['label'] }}</span>
+                                <span class="text-slate-500 dark:text-slate-400"><strong class="text-slate-800 dark:text-slate-100">{{ $s['reply_rate'] }}%</strong> · {{ $s['replied'] }}/{{ $s['delivered'] }}</span>
+                            </div>
+                            <div class="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                <div class="h-full rounded-full" style="width: {{ min(100, $s['reply_rate']) }}%; background: var(--viz-series-1);"></div>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-xs text-slate-400">Belum ada pesan terkirim.</p>
+                    @endforelse
+                </div>
+                @if($replyCategories->isNotEmpty())
+                    <div class="flex flex-wrap gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        @foreach(\App\Models\OutreachMessage::REPLY_CATEGORIES as $key => $label)
+                            @if($replyCategories[$key] ?? 0)
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{{ $label }}: <strong class="text-slate-800 dark:text-slate-100">{{ $replyCategories[$key] }}</strong></span>
+                            @endif
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <div class="dash-card">
+                <h3 class="font-bold text-slate-900 dark:text-white text-base">Subjek Email Pembuka</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-4">Pola subjek dengan balasan terbanyak (<code>{nama}</code>/<code>{kota}</code> = nama bisnis/kota lead).</p>
+                <div class="space-y-2.5">
+                    @forelse($subjectStats as $s)
+                        <div class="flex justify-between items-center gap-3 text-xs">
+                            <span class="font-semibold text-slate-700 dark:text-slate-200 truncate" title="{{ $s['subject'] }}">{{ $s['subject'] }}</span>
+                            <span class="whitespace-nowrap text-slate-500 dark:text-slate-400"><strong class="text-slate-800 dark:text-slate-100">{{ $s['reply_rate'] }}%</strong> · {{ $s['replied'] }}/{{ $s['delivered'] }}</span>
+                        </div>
+                    @empty
+                        <p class="text-xs text-slate-400">Belum ada email pembuka yang terkirim.</p>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
         {{-- Recent activity --}}
         <div class="dash-card">
             <h3 class="font-bold text-slate-900 dark:text-white text-base mb-4">Aktivitas Outreach Terbaru</h3>
@@ -283,7 +378,7 @@
                             <div class="text-[10px] text-slate-500 dark:text-slate-400 truncate">{{ $msg->type === 'whatsapp' ? 'WhatsApp' : 'Email' }} · {{ $msg->campaign?->name }}</div>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                            <span class="badge badge-{{ $msg->status }} px-2.5 py-1 text-[10px]">{{ ucfirst($msg->status) }}</span>
+                            <span class="badge badge-{{ $msg->status }} px-2.5 py-1 text-[10px]">{{ $msg->statusLabel() }}</span>
                             <span class="text-[10px] text-slate-400 w-20 text-right">{{ $msg->updated_at->diffForHumans(short: true) }}</span>
                         </div>
                     </div>

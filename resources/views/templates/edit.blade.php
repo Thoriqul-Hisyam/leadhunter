@@ -1,7 +1,7 @@
 ﻿@extends('layouts.app')
 
-@section('title', 'Edit Template - Sandesa')
-@section('header', 'Edit Template')
+@section('title', 'Ubah Template - Sandesa')
+@section('header', 'Ubah Template')
 
 @section('content')
 <div class="max-w-6xl mx-auto">
@@ -16,8 +16,8 @@
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Edit Outreach Template</h3>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Modify properties of outreach template: {{ $template->name }}</p>
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Ubah Template Outreach</h3>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Ubah properti template outreach: {{ $template->name }}</p>
                     </div>
                 </div>
 
@@ -27,14 +27,14 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="name" class="form-label text-xs">Template Name</label>
-                            <input type="text" name="name" id="name" placeholder="e.g. Cafe Intro (Casual)" required class="form-input text-xs" value="{{ old('name', $template->name) }}">
+                            <label for="name" class="form-label text-xs">Nama Template</label>
+                            <input type="text" name="name" id="name" placeholder="mis. Perkenalan Cafe (Santai)" required class="form-input text-xs" value="{{ old('name', $template->name) }}">
                             @error('name') <p class="text-2xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label for="niche" class="form-label text-xs">Target Niche</label>
-                            <input type="text" name="niche" id="niche" placeholder="e.g. cafe, dentist, salon, agency" required class="form-input text-xs" value="{{ old('niche', $template->niche) }}">
+                            <label for="niche" class="form-label text-xs">Niche Target</label>
+                            <input type="text" name="niche" id="niche" placeholder="mis. cafe, klinik gigi, salon, agency" required class="form-input text-xs" value="{{ old('niche', $template->niche) }}">
                             @error('niche') <p class="text-2xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
@@ -47,14 +47,14 @@
                         </div>
 
                         <div>
-                            <label for="language" class="form-label text-xs">Language</label>
-                            <x-searchable-select id="language-select" inputId="language" name="language" :required="true" :selected="old('language', $template->language)" :options="['id' => 'Indonesian (id)', 'en' => 'English (en)']" triggerClass="form-select text-xs w-full" />
+                            <label for="language" class="form-label text-xs">Bahasa</label>
+                            <x-searchable-select id="language-select" inputId="language" name="language" :required="true" :selected="old('language', $template->language)" :options="['id' => 'Bahasa Indonesia (id)', 'en' => 'Bahasa Inggris (en)']" triggerClass="form-select text-xs w-full" />
                             @error('language') <p class="text-2xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label for="tone" class="form-label text-xs">Tone</label>
-                            <x-searchable-select id="tone-select" inputId="tone" name="tone" :required="true" :selected="old('tone', $template->tone)" :options="['formal' => 'Formal / Professional', 'casual' => 'Casual / Relaxed', 'friendly' => 'Friendly / Warm']" triggerClass="form-select text-xs w-full" />
+                            <label for="tone" class="form-label text-xs">Nada</label>
+                            <x-searchable-select id="tone-select" inputId="tone" name="tone" :required="true" :selected="old('tone', $template->tone)" :options="['formal' => 'Formal / Profesional', 'casual' => 'Santai / Rileks', 'friendly' => 'Ramah / Hangat']" triggerClass="form-select text-xs w-full" />
                             @error('tone') <p class="text-2xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
@@ -62,28 +62,28 @@
                     @include('templates.partials.ai-generator')
 
                     <div id="subject-group" class="transition-all duration-300">
-                        <label for="subject" class="form-label text-xs">Email Subject Line</label>
-                        <input type="text" name="subject" id="subject" placeholder="e.g. Special offer for @{{business_name}}" class="form-input text-xs" value="{{ old('subject', $template->subject) }}">
+                        <label for="subject" class="form-label text-xs">Subjek Email</label>
+                        <input type="text" name="subject" id="subject" placeholder="mis. Penawaran khusus untuk @{{business_name}}" class="form-input text-xs" value="{{ old('subject', $template->subject) }}">
                         @error('subject') <p class="text-2xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
-                        <label for="body" class="form-label text-xs">Message Body</label>
-                        <textarea name="body" id="body" rows="12" required placeholder="Write your pitch template here... Hint: click on the placeholder chips on the right to inject variables!" class="form-input text-xs font-sans leading-relaxed resize-y">{{ old('body', $template->body) }}</textarea>
+                        <label for="body" class="form-label text-xs">Isi Pesan</label>
+                        <textarea name="body" id="body" rows="12" required placeholder="Tulis template penawaran Anda di sini... Tips: klik chip placeholder di sebelah kanan untuk menyisipkan variabel." class="form-input text-xs font-sans leading-relaxed resize-y">{{ old('body', $template->body) }}</textarea>
                         @error('body') <p class="text-2xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="flex items-center gap-2 pt-2">
                         <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $template->is_active) ? 'checked' : '' }} class="form-checkbox h-4.5 w-4.5 rounded text-indigo-600 cursor-pointer">
-                        <label for="is_active" class="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Active template (available for campaigns)</label>
+                        <label for="is_active" class="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Template aktif (bisa dipakai di campaign)</label>
                     </div>
 
                     <div class="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <button type="submit" class="btn-primary py-2.5 px-6 font-bold rounded-xl shadow-lg shadow-indigo-500/20">
-                            Save Changes
+                            Simpan Perubahan
                         </button>
                         <a href="{{ route('templates.index') }}" class="btn-secondary py-2.5 px-5 rounded-xl text-xs font-semibold">
-                            Cancel
+                            Batal
                         </a>
                     </div>
                 </form>
@@ -94,13 +94,13 @@
         <div class="lg:col-span-1 space-y-6">
             <div class="glass-card p-6 sticky top-24" style="animation: fadeInUp 0.4s ease backwards; animation-delay: 0.08s;">
                 <h4 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1.5"><x-icon name="light-bulb" class="w-3.5 h-3.5" /> Placeholder Helper</span>
+                    <span class="inline-flex items-center gap-1.5"><x-icon name="light-bulb" class="w-3.5 h-3.5" /> Bantuan Placeholder</span>
                 </h4>
-                <p class="text-2xs text-slate-500 dark:text-slate-400 leading-normal mb-5">Click on any chip below to automatically insert the variable tag into your subject or body editor at your cursor position.</p>
+                <p class="text-2xs text-slate-500 dark:text-slate-400 leading-normal mb-5">Klik chip di bawah untuk menyisipkan tag variabel ke kolom subjek atau isi pesan, tepat di posisi kursor.</p>
 
                 <div class="space-y-3.5">
                     <div>
-                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Lead Information</p>
+                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Informasi Lead</p>
                         <div class="flex flex-wrap gap-2">
                             <button type="button" onclick="injectPlaceholder('@{{business_name}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
                                 <span class="font-mono text-2xs font-bold">@{{business_name}}</span>
@@ -126,7 +126,7 @@
                     </div>
 
                     <div>
-                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Campaign Settings</p>
+                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Pengaturan Campaign</p>
                         <div class="flex flex-wrap gap-2">
                             <button type="button" onclick="injectPlaceholder('@{{offer}}')" class="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-2xs font-bold transition flex flex-col items-start w-full">
                                 <span class="font-mono text-2xs font-bold">@{{offer}}</span>

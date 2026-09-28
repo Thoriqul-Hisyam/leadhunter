@@ -16,7 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // One-click unsubscribe (RFC 8058) dikirim oleh server email tanpa token CSRF; URL-nya sudah bertanda tangan.
-        $middleware->validateCsrfTokens(except: ['unsubscribe/*']);
+        // Webhook gateway WhatsApp juga dipanggil dari server luar; diamankan dengan token di URL.
+        $middleware->validateCsrfTokens(except: ['unsubscribe/*', 'webhooks/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

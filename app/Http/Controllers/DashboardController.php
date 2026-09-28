@@ -6,6 +6,8 @@ use App\Models\Campaign;
 use App\Models\Lead;
 use App\Models\MessageTemplate;
 use App\Models\OutreachMessage;
+use App\Models\Setting;
+use App\Services\AiService;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -70,10 +72,13 @@ class DashboardController extends Controller
 
         $pipeline = Lead::selectRaw('pipeline_stage, COUNT(*) as total')->groupBy('pipeline_stage')->pluck('total', 'pipeline_stage');
 
-        [$templateStats, $modeStats] = $this->abStats();
+        [$templateStats, $modeStats, $variantStats] = $this->abStats();
+        [$stepStats, $subjectStats, $replyCategories] = $this->sequenceStats();
+        $onboarding = $this->onboarding($totalLeads, $totalCampaigns);
 
         return view('dashboard', compact(
-            'stats', 'channels', 'chart', 'recentOutreach', 'upcoming', 'campaignStats', 'pipeline', 'templateStats', 'modeStats'
+            'stats', 'channels', 'chart', 'recentOutreach', 'upcoming', 'campaignStats', 'pipeline', 'templateStats', 'modeStats', 'onboarding',
+            'stepStats', 'subjectStats', 'replyCategories', 'variantStats'
         ) + [
             // Variabel lama, tetap disediakan untuk kompatibilitas view
             'totalLeads' => $totalLeads,
@@ -115,13 +120,13 @@ class DashboardController extends Controller
     }
 
     /**
-     * A/B: bandingkan reply rate per template dan per mode (AI vs template vs hybrid).
+     * A/B: bandingkan reply rate per template, per mode (AI vs template vs hybrid), dan per varian prompt.
      */
     protected function abStats(): array
     {
         $rows = OutreachMessage::whereIn('status', ['sent', 'replied'])
-            ->select('template_id', 'mode', DB::raw('COUNT(*) as delivered'), DB::raw("SUM(CASE WHEN status = 'replied' THEN 1 ELSE 0 END) as replied"))
-            ->groupBy('template_id', 'mode')
+            ->select('template_id', 'mode', 'prompt_variant', DB::raw('COUNT(*) as delivered'), DB::raw("SUM(CASE WHEN status = 'replied' THEN 1 ELSE 0 END) as replied"))
+            ->groupBy('template_id', 'mode', 'prompt_variant')
             ->get();
 
         $templateNames = MessageTemplate::whereIn('id', $rows->pluck('template_id')->filter())->pluck('name', 'id');
@@ -151,7 +156,135 @@ class DashboardController extends Controller
                 return ['label' => $label, 'delivered' => $delivered, 'replied' => $replied, 'reply_rate' => $this->rate($replied, $delivered)];
             });
 
-        return [$templateStats, $modeStats];
+        // Varian gaya pembuka pesan AI (lihat AiService::PROMPT_VARIANTS)
+        $variantStats = collect(AiService::PROMPT_VARIANTS)->map(function ($label, $variant) use ($rows) {
+            $group = $rows->where('prompt_variant', $variant);
+            $delivered = (int) $group->sum('delivered');
+            $replied = (int) $group->sum('replied');
+
+            return ['label' => $label, 'delivered' => $delivered, 'replied' => $replied, 'reply_rate' => $this->rate($replied, $delivered)];
+        });
+
+        return [$templateStats, $modeStats, $variantStats];
+    }
+
+    /**
+     * Reply rate per langkah sequence, per pola subjek email pembuka, dan jumlah balasan per kategori.
+     * Balasan otomatis tidak berstatus "replied", jadi tidak ikut dihitung.
+     */
+    protected function sequenceStats(): array
+    {
+        $stepStats = OutreachMessage::whereIn('status', ['sent', 'replied'])
+            ->select('step', DB::raw('COUNT(*) as delivered'), DB::raw("SUM(CASE WHEN status = 'replied' THEN 1 ELSE 0 END) as replied"))
+            ->groupBy('step')
+            ->orderBy('step')
+            ->get()
+            ->map(fn ($row) => [
+                'label' => (int) $row->step <= 1 ? 'Langkah 1 · pembuka' : "Langkah {$row->step} · follow-up",
+                'delivered' => (int) $row->delivered,
+                'replied' => (int) $row->replied,
+                'reply_rate' => $this->rate((int) $row->replied, (int) $row->delivered),
+            ]);
+
+        // Nama bisnis & kota diganti placeholder, supaya subjek dengan pola sama terkelompok.
+        $subjectStats = OutreachMessage::with('lead:id,business_name,city')
+            ->where('type', 'email')
+            ->where('step', 1)
+            ->whereIn('status', ['sent', 'replied'])
+            ->whereNotNull('subject')
+            ->latest('sent_at')
+            ->limit(2000)
+            ->get(['id', 'lead_id', 'subject', 'status'])
+            ->groupBy(fn (OutreachMessage $m) => mb_strtolower($this->subjectPattern($m)))
+            ->map(fn ($group) => [
+                'subject' => $this->subjectPattern($group->first()),
+                'delivered' => $group->count(),
+                'replied' => $group->where('status', 'replied')->count(),
+                'reply_rate' => $this->rate($group->where('status', 'replied')->count(), $group->count()),
+            ])
+            ->sort(fn ($a, $b) => [$b['replied'], $b['delivered']] <=> [$a['replied'], $a['delivered']])
+            ->take(6)
+            ->values();
+
+        $replyCategories = OutreachMessage::whereNotNull('reply_category')
+            ->selectRaw('reply_category, COUNT(*) as total')
+            ->groupBy('reply_category')
+            ->pluck('total', 'reply_category');
+
+        return [$stepStats, $subjectStats, $replyCategories];
+    }
+
+    protected function subjectPattern(OutreachMessage $message): string
+    {
+        $subject = trim((string) $message->subject);
+        $lead = $message->lead;
+
+        if ($lead) {
+            $names = array_unique(array_filter([$lead->business_name, $lead->displayName()]));
+            usort($names, fn ($a, $b) => mb_strlen($b) <=> mb_strlen($a));
+
+            foreach ($names as $name) {
+                $subject = str_ireplace($name, '{nama}', $subject);
+            }
+
+            if ($lead->city) {
+                $subject = str_ireplace($lead->city, '{kota}', $subject);
+            }
+        }
+
+        return $subject;
+    }
+
+    /**
+     * Langkah awal yang perlu diselesaikan pengguna baru. Kosong jika semuanya sudah beres.
+     *
+     * @return array<int, array{label: string, done: bool, url: string, hint: string}>
+     */
+    protected function onboarding(int $totalLeads, int $totalCampaigns): array
+    {
+        $canSettings = auth()->user()?->can('manage_settings');
+        $settingsUrl = $canSettings ? route('settings.edit') : '#';
+
+        $steps = [
+            [
+                'label' => 'Isi identitas pengirim',
+                'done' => trim((string) Setting::get('sender_name')) !== '',
+                'url' => $settingsUrl,
+                'hint' => 'Nama dan usaha Anda dipakai di setiap pesan.',
+            ],
+            [
+                'label' => 'Hubungkan AI',
+                'done' => app(AiService::class)->isConfigured() && Setting::get('ai_tested_at') !== '',
+                'url' => $settingsUrl.'#koneksi',
+                'hint' => 'Isi Base URL, API key, dan model, lalu tekan Tes AI.',
+            ],
+            [
+                'label' => 'Hubungkan email (SMTP)',
+                'done' => config('mail.default') === 'smtp' && Setting::get('mail_tested_at') !== '',
+                'url' => $settingsUrl.'#koneksi',
+                'hint' => 'Pakai App Password Gmail, lalu tekan Kirim email tes.',
+            ],
+            [
+                'label' => 'Hubungkan WhatsApp gateway',
+                'done' => ! in_array((string) Setting::get('wa_driver'), ['', 'manual'], true) && Setting::get('wa_tested_at') !== '',
+                'url' => $settingsUrl.'#pengiriman',
+                'hint' => 'Opsional: kirim WhatsApp otomatis lewat Fonnte atau Wablas.',
+            ],
+            [
+                'label' => 'Scrape lead pertama',
+                'done' => $totalLeads > 0,
+                'url' => route('leads.index'),
+                'hint' => 'Cari bisnis berdasarkan niche dan kota.',
+            ],
+            [
+                'label' => 'Buat campaign pertama',
+                'done' => $totalCampaigns > 0,
+                'url' => route('campaigns.create'),
+                'hint' => 'Pilih lead lalu generate pesan dengan AI.',
+            ],
+        ];
+
+        return collect($steps)->every('done') ? [] : $steps;
     }
 
     protected function rate(int $part, int $total): float

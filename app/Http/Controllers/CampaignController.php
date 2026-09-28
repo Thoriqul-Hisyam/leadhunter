@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\AiException;
 use App\Models\Campaign;
+use App\Models\CampaignStep;
 use App\Models\Lead;
 use App\Models\MessageTemplate;
 use App\Services\AiService;
 use App\Services\OutreachGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CampaignController extends Controller
 {
@@ -49,9 +51,20 @@ class CampaignController extends Controller
         }
 
         // 3. Contact Status Filters
-        $query->filter($request->only(['has_phone', 'has_email', 'has_website']));
+        $query->filter($request->only(['has_phone', 'has_email', 'has_website', 'min_score']));
 
-        $leads = $query->paginate(15);
+        // "Pilih semua hasil filter" / Smart Select di composer: cukup ID + nama
+        if ($request->boolean('ids_only')) {
+            $rows = $query->limit(500)->get(['id', 'business_name']);
+
+            return response()->json([
+                'status' => 'success',
+                'leads' => $rows->map(fn ($lead) => ['id' => $lead->id, 'business_name' => $lead->business_name])->values(),
+                'truncated' => $rows->count() === 500,
+            ]);
+        }
+
+        $leads = $query->paginate((int) min(50, max(10, (int) $request->input('per_page', 15))));
 
         return response()->json([
             'status' => 'success',
@@ -152,9 +165,18 @@ class CampaignController extends Controller
 
     public function show(Campaign $campaign)
     {
-        $campaign->load(['outreachMessages.lead']);
+        $campaign->load(['outreachMessages.lead', 'steps']);
 
         $messages = $campaign->outreachMessages;
+
+        // Performa per langkah sequence (1 = pesan pembuka)
+        $stepStats = $messages->groupBy(fn ($m) => max(1, (int) $m->step))
+            ->map(fn ($group) => [
+                'total' => $group->count(),
+                'sent' => $group->whereIn('status', ['sent', 'replied'])->count(),
+                'replied' => $group->where('status', 'replied')->count(),
+            ])
+            ->sortKeys();
         $totalMessages = $messages->count();
         $sentCount = $messages->whereIn('status', ['sent', 'replied'])->count();
         $pendingCount = $messages->whereIn('status', ['pending', 'queued'])->count();
@@ -172,8 +194,44 @@ class CampaignController extends Controller
             'pendingCount',
             'failedCount',
             'repliedCount',
-            'groupedMessages'
-        ));
+            'groupedMessages',
+            'stepStats'
+        ) + ['waGatewayActive' => app(\App\Services\OutreachSender::class)->whatsAppGatewayActive()]);
+    }
+
+    /**
+     * Simpan langkah lanjutan sequence (langkah 2 dst.). Daftar kosong = pakai follow-up default.
+     */
+    public function updateSequence(Request $request, Campaign $campaign)
+    {
+        $data = $request->validate([
+            'steps' => 'nullable|array|max:'.(CampaignStep::MAX_STEP - 1),
+            'steps.*.channel' => 'required|in:'.implode(',', array_keys(CampaignStep::CHANNELS)),
+            'steps.*.delay_days' => 'required|integer|min:1|max:60',
+            'steps.*.auto_queue' => 'nullable|boolean',
+        ], [
+            'steps.max' => 'Maksimal '.(CampaignStep::MAX_STEP - 1).' langkah lanjutan.',
+            'steps.*.delay_days.*' => 'Jeda tiap langkah harus 1–60 hari.',
+        ]);
+
+        $steps = array_values($data['steps'] ?? []);
+
+        DB::transaction(function () use ($campaign, $steps) {
+            CampaignStep::where('campaign_id', $campaign->id)->delete();
+
+            foreach ($steps as $i => $step) {
+                $campaign->steps()->create([
+                    'step' => $i + 2,
+                    'channel' => $step['channel'],
+                    'delay_days' => (int) $step['delay_days'],
+                    'auto_queue' => (bool) ($step['auto_queue'] ?? false),
+                ]);
+            }
+        });
+
+        return redirect()->to(route('campaigns.show', $campaign).'#sequence')->with('success', $steps
+            ? 'Sequence disimpan: '.count($steps).' langkah lanjutan setelah pesan pembuka.'
+            : 'Sequence dikosongkan. Campaign ini memakai follow-up default dari Pengaturan.');
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Jobs\SendOutreachJob;
 use App\Mail\OutreachMail;
 use App\Models\BlacklistEntry;
 use App\Models\OutreachMessage;
+use App\Services\WhatsApp\WhatsAppManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
@@ -17,6 +18,22 @@ use Throwable;
 
 class OutreachSender
 {
+    public const CHANNELS = ['email', 'whatsapp'];
+
+    public function __construct(protected WhatsAppManager $whatsapp)
+    {
+    }
+
+    /**
+     * Kirim satu pesan sekarang juga, sesuai channel-nya.
+     *
+     * @throws OutreachSendException
+     */
+    public function send(OutreachMessage $message): void
+    {
+        $message->type === 'whatsapp' ? $this->sendWhatsApp($message) : $this->sendEmail($message);
+    }
+
     /**
      * Kirim satu email outreach sekarang juga.
      *
@@ -34,6 +51,8 @@ class OutreachSender
         if ($message->isDelivered()) {
             throw new OutreachSendException('Pesan ini sudah terkirim sebelumnya dan tidak akan dikirim ulang.');
         }
+
+        $this->guardSequence($message);
 
         if (! $lead || empty($lead->email)) {
             $this->failPermanently($message, 'Lead tidak memiliki alamat email.');
@@ -65,6 +84,87 @@ class OutreachSender
         }
 
         $message->markSent();
+    }
+
+    /**
+     * Kirim satu pesan WhatsApp lewat gateway (Fonnte/Wablas).
+     *
+     * @throws OutreachSendException
+     */
+    public function sendWhatsApp(OutreachMessage $message): void
+    {
+        $message->loadMissing('lead');
+        $lead = $message->lead;
+        $gateway = $this->whatsapp->driver();
+
+        if ($message->type !== 'whatsapp') {
+            throw new OutreachSendException('Pesan ini bukan WhatsApp.');
+        }
+
+        if ($message->isDelivered()) {
+            throw new OutreachSendException('Pesan ini sudah terkirim sebelumnya dan tidak akan dikirim ulang.');
+        }
+
+        if (! $gateway->isAutomatic()) {
+            throw new OutreachSendException('WhatsApp gateway belum diatur (mode manual). Kirim lewat tombol WhatsApp, atau pilih Fonnte/Wablas di Pengaturan.');
+        }
+
+        $this->guardSequence($message);
+
+        if (! $lead || ! $this->canWhatsApp($lead)) {
+            $this->failPermanently($message, $lead?->whatsapp_number
+                ? "Nomor {$lead->phone} adalah telepon kantor, bukan nomor seluler. Izinkan nomor kantor di Pengaturan jika bisnis ini memakai WhatsApp Business di nomor tersebut."
+                : 'Lead tidak memiliki nomor WhatsApp yang valid.');
+        }
+
+        if (BlacklistEntry::blocks($lead, 'whatsapp')) {
+            $this->failPermanently($message, "Nomor {$lead->phone} ada di blacklist. Pesan tidak dikirim.");
+        }
+
+        // Melindungi nomor pengirim: satu pesan pembuka per lead per campaign (follow-up/sequence dikecualikan).
+        if (! $message->followup_of_id && ($message->step ?? 1) <= 1) {
+            $alreadyContacted = OutreachMessage::where('lead_id', $lead->id)
+                ->where('campaign_id', $message->campaign_id)
+                ->where('type', 'whatsapp')
+                ->whereIn('status', ['sent', 'replied'])
+                ->whereKeyNot($message->id)
+                ->exists();
+
+            if ($alreadyContacted) {
+                $this->failPermanently($message, 'Lead ini sudah menerima WhatsApp di campaign yang sama.');
+            }
+        }
+
+        $message->update(['attempts' => $message->attempts + 1]);
+
+        $result = $gateway->send($lead->whatsapp_number, $message->message);
+
+        if (! $result->ok) {
+            if ($result->permanent) {
+                $this->failPermanently($message, $result->error);
+            }
+
+            $message->markFailed((string) $result->error);
+
+            throw new OutreachSendException((string) $result->error);
+        }
+
+        $message->update(['message_id' => $result->id ?: null]);
+        $message->markSent();
+    }
+
+    /**
+     * Lead bisa dikirimi WhatsApp otomatis: nomor valid, dan seluler (kecuali nomor kantor diizinkan).
+     */
+    public function canWhatsApp($lead): bool
+    {
+        return ! empty($lead->whatsapp_number)
+            && ($lead->phone_is_mobile || config('leadhunter.whatsapp.allow_landline'));
+    }
+
+    public function whatsAppGatewayActive(): bool
+    {
+        return $this->whatsapp->isAutomatic();
     }
 
     /**
@@ -147,84 +247,183 @@ class OutreachSender
     */
 
     /**
-     * Masukkan email ke antrean kirim dengan jeda acak antar email.
+     * Batas & jeda per channel.
+     *
+     * @return array{hourly: int, daily: int, min_gap: int, max_gap: int}
+     */
+    public function limits(string $channel): array
+    {
+        $config = $channel === 'whatsapp' ? config('leadhunter.whatsapp') : config('leadhunter.sending');
+        $min = (int) ($config['min_gap_seconds'] ?? 90);
+
+        return [
+            'hourly' => (int) ($config['hourly_limit'] ?? 20),
+            'daily' => (int) ($config['daily_limit'] ?? 80),
+            'min_gap' => $min,
+            'max_gap' => max($min, (int) ($config['max_gap_seconds'] ?? 240)),
+        ];
+    }
+
+    /**
+     * Masukkan pesan (email, dan WhatsApp jika gateway aktif) ke antrean kirim dengan jeda acak.
+     * Jadwal otomatis digeser ke dalam jendela kirim (jam & hari kerja).
      *
      * @param  Collection<int, OutreachMessage>  $messages
-     * @return array{queued: int, skipped: int, last_at: ?\Illuminate\Support\Carbon}
+     * @return array{queued: int, skipped: int, last_at: ?Carbon, by_channel: array<string, int>}
      */
     public function queue(Collection $messages): array
     {
-        $min = (int) config('leadhunter.sending.min_gap_seconds', 90);
-        $max = max($min, (int) config('leadhunter.sending.max_gap_seconds', 240));
-
-        // Sambung di belakang antrean yang sudah ada.
-        $lastScheduled = OutreachMessage::where('status', 'queued')->max('scheduled_at');
-        $at = $lastScheduled && now()->lt($lastScheduled) ? Carbon::parse($lastScheduled) : now();
-
-        $queued = 0;
+        $gatewayActive = $this->whatsAppGatewayActive();
+        $cursor = [];
+        $byChannel = array_fill_keys(self::CHANNELS, 0);
         $skipped = 0;
-        $first = true;
+        $lastAt = null;
 
         foreach ($messages as $message) {
             $message->loadMissing('lead');
+            $channel = $message->type === 'whatsapp' ? 'whatsapp' : 'email';
 
-            if ($message->type !== 'email' || ! in_array($message->status, ['pending', 'failed'], true) || empty($message->lead?->email)) {
+            // Pesan yang ditandai "perlu review" oleh quality gate harus diedit/disetujui dulu.
+            $eligible = in_array($message->status, ['pending', 'failed'], true) && ! $message->needs_review && match ($channel) {
+                'email' => ! empty($message->lead?->email),
+                'whatsapp' => $gatewayActive && $message->lead && $this->canWhatsApp($message->lead),
+            };
+
+            if (! $eligible) {
                 $skipped++;
 
                 continue;
             }
 
-            if (! ($first && ! $lastScheduled)) {
-                $at = $at->copy()->addSeconds(random_int($min, $max));
-            }
-            $first = false;
+            $limits = $this->limits($channel);
 
-            $message->update(['status' => 'queued', 'scheduled_at' => $at, 'last_error' => null]);
-            $queued++;
+            if (! isset($cursor[$channel])) {
+                // Sambung di belakang antrean channel yang sama yang sudah ada.
+                $last = OutreachMessage::where('status', 'queued')->where('type', $channel)->max('scheduled_at');
+                $cursor[$channel] = $last && now()->lt($last)
+                    ? Carbon::parse($last)->addSeconds(random_int($limits['min_gap'], $limits['max_gap']))
+                    : now();
+            } else {
+                $cursor[$channel] = $cursor[$channel]->copy()->addSeconds(random_int($limits['min_gap'], $limits['max_gap']));
+            }
+
+            $cursor[$channel] = $this->nextSendableTime($cursor[$channel]);
+
+            $message->update(['status' => 'queued', 'scheduled_at' => $cursor[$channel], 'last_error' => null]);
+            $byChannel[$channel]++;
+            $lastAt = $lastAt === null || $cursor[$channel]->gt($lastAt) ? $cursor[$channel] : $lastAt;
         }
 
-        return ['queued' => $queued, 'skipped' => $skipped, 'last_at' => $queued ? $at : null];
+        return [
+            'queued' => array_sum($byChannel),
+            'skipped' => $skipped,
+            'last_at' => $lastAt,
+            'by_channel' => $byChannel,
+        ];
     }
 
     /**
-     * Dipanggil scheduler tiap menit: kirim email antrean yang sudah jatuh tempo,
-     * tanpa melewati batas per jam.
+     * Dipanggil scheduler tiap menit: kirim pesan antrean yang jatuh tempo, per channel,
+     * tanpa melewati batas per jam/per hari, hanya di dalam jendela kirim, dan maksimal
+     * satu pesan per channel per putaran (antrean yang tertunda tidak terkirim sekaligus).
+     *
+     * @return int jumlah pesan yang diserahkan ke worker
      */
     public function dispatchDue(): int
     {
-        $limit = (int) config('leadhunter.sending.hourly_limit', 20);
-        $sentLastHour = OutreachMessage::where('type', 'email')
-            ->whereIn('status', ['sent', 'replied'])
-            ->where('sent_at', '>=', now()->subHour())
-            ->count();
-
-        // Pesan yang sedang diproses worker (scheduled_at sudah dikosongkan) ikut dihitung.
-        $inFlight = OutreachMessage::where('status', 'queued')->whereNull('scheduled_at')->count();
-
-        $budget = $limit - $sentLastHour - $inFlight;
-
-        if ($budget <= 0) {
+        if (! $this->withinWindow(now())) {
             return 0;
         }
 
-        $due = OutreachMessage::where('status', 'queued')
-            ->whereNotNull('scheduled_at')
-            ->where('scheduled_at', '<=', now())
-            ->orderBy('scheduled_at')
-            ->limit($budget)
-            ->get();
+        $dispatched = 0;
 
-        foreach ($due as $message) {
+        foreach (self::CHANNELS as $channel) {
+            if ($channel === 'whatsapp' && ! $this->whatsAppGatewayActive()) {
+                continue;
+            }
+
+            if ($this->remainingBudget($channel) <= 0) {
+                continue;
+            }
+
+            $message = OutreachMessage::where('status', 'queued')
+                ->where('type', $channel)
+                ->whereNotNull('scheduled_at')
+                ->where('scheduled_at', '<=', now())
+                ->orderBy('scheduled_at')
+                ->first();
+
+            if (! $message) {
+                continue;
+            }
+
             // scheduled_at = null menandai "sudah diserahkan ke worker", agar tidak di-dispatch dua kali.
             $message->update(['scheduled_at' => null]);
             SendOutreachJob::dispatch($message->id);
+            $dispatched++;
         }
 
-        return $due->count();
+        return $dispatched;
+    }
+
+    public function remainingBudget(string $channel): int
+    {
+        $limits = $this->limits($channel);
+        $sent = fn (Carbon $since) => OutreachMessage::where('type', $channel)
+            ->whereIn('status', ['sent', 'replied'])
+            ->where('sent_at', '>=', $since)
+            ->count();
+
+        // Pesan yang sedang diproses worker ikut dihitung.
+        $inFlight = OutreachMessage::where('status', 'queued')->where('type', $channel)->whereNull('scheduled_at')->count();
+
+        return min(
+            $limits['hourly'] - $sent(now()->subHour()),
+            $limits['daily'] - $sent(now()->startOfDay()),
+        ) - $inFlight;
+    }
+
+    public function withinWindow(Carbon $at): bool
+    {
+        return $this->nextSendableTime($at)->equalTo($at);
     }
 
     /**
-     * Jadwalkan ulang email gagal yang masih mungkin berhasil, dan pesan yang tersangkut di worker.
+     * Waktu terdekat (>= $at) yang masuk jendela kirim: jam kerja, dan hari kerja jika diaktifkan.
+     */
+    public function nextSendableTime(Carbon $at): Carbon
+    {
+        $at = $at->copy();
+        [$startHour, $startMinute] = array_map('intval', explode(':', (string) config('leadhunter.sending.window_start', '08:00')) + [1 => 0]);
+        [$endHour, $endMinute] = array_map('intval', explode(':', (string) config('leadhunter.sending.window_end', '16:00')) + [1 => 0]);
+        $weekdaysOnly = (bool) config('leadhunter.sending.weekdays_only', true);
+
+        for ($i = 0; $i < 8; $i++) {
+            $start = $at->copy()->setTime($startHour, $startMinute);
+            $end = $at->copy()->setTime($endHour, $endMinute);
+
+            if ($weekdaysOnly && $at->isWeekend()) {
+                $at = $at->copy()->addDay()->setTime($startHour, $startMinute);
+
+                continue;
+            }
+
+            if ($at->lt($start)) {
+                return $start;
+            }
+
+            if ($at->lt($end)) {
+                return $at;
+            }
+
+            $at = $at->copy()->addDay()->setTime($startHour, $startMinute);
+        }
+
+        return $at;
+    }
+
+    /**
+     * Jadwalkan ulang pesan gagal yang masih mungkin berhasil, dan pesan yang tersangkut di worker.
      */
     public function retryFailed(): int
     {
@@ -235,7 +434,7 @@ class OutreachSender
             ->where('updated_at', '<', now()->subMinutes(30))
             ->update(['scheduled_at' => now()]);
 
-        $retry = OutreachMessage::where('type', 'email')
+        $retry = OutreachMessage::whereIn('type', self::CHANNELS)
             ->where('status', 'failed')
             ->where('attempts', '>', 0)
             ->where('attempts', '<', $maxAttempts)
@@ -248,6 +447,19 @@ class OutreachSender
     /**
      * @throws OutreachSendException
      */
+    /**
+     * Langkah follow-up tidak pernah dikirim ke lead yang sudah membalas atau sudah ditutup,
+     * walaupun pesannya sudah terlanjur dibuat / masuk antrean.
+     *
+     * @throws OutreachSendException
+     */
+    protected function guardSequence(OutreachMessage $message): void
+    {
+        if ($message->isSequenceStep() && ($reason = $message->lead?->sequenceStopReason())) {
+            $this->failPermanently($message, $reason);
+        }
+    }
+
     protected function failPermanently(OutreachMessage $message, string $reason): never
     {
         $message->markFailed($reason);

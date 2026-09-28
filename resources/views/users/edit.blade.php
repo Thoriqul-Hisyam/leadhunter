@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Edit User — Sandesa')
+@section('title', 'Ubah User — Sandesa')
 
 @section('content')
 <div class="max-w-2xl mx-auto space-y-6">
@@ -11,7 +11,7 @@
             <span>Kembali ke Daftar User</span>
         </a>
         <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-            <span>Edit Profil User</span>
+            <span>Ubah Profil User</span>
         </h1>
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">Ubah informasi akun dan sinkronisasikan wewenang peran untuk {{ $user->name }}.</p>
     </div>
@@ -78,7 +78,7 @@
 
             {{-- Assign Roles --}}
             <div>
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-3">Roles</label>
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-3">Role</label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     @foreach($roles as $role)
                         <label class="flex items-start p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-850 rounded-2xl hover:border-indigo-500/60 dark:hover:border-indigo-500/60 transition cursor-pointer select-none relative group">

@@ -16,7 +16,7 @@ class GooglePlacesSource implements LeadSource
     protected const ENDPOINT = 'https://places.googleapis.com/v1/places:searchText';
 
     protected const FIELDS = [
-        'places.displayName', 'places.formattedAddress', 'places.nationalPhoneNumber',
+        'places.id', 'places.displayName', 'places.formattedAddress', 'places.nationalPhoneNumber',
         'places.internationalPhoneNumber', 'places.websiteUri', 'places.rating',
         'places.userRatingCount', 'places.googleMapsUri', 'places.primaryTypeDisplayName', 'nextPageToken',
     ];
@@ -68,6 +68,7 @@ class GooglePlacesSource implements LeadSource
                     'rating' => $place['rating'] ?? null,
                     'reviews_count' => $place['userRatingCount'] ?? null,
                     'google_maps_url' => $place['googleMapsUri'] ?? null,
+                    'place_id' => $place['id'] ?? null,
                 ]);
 
                 if (++$count >= $limit) {

@@ -2,15 +2,16 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AiUsageLog;
 use App\Models\ScrapingNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 class CleanupCommand extends Command
 {
-    protected $signature = 'leadhunter:cleanup {--notifications-days=30}';
+    protected $signature = 'leadhunter:cleanup {--notifications-days=30} {--ai-log-days=90}';
 
-    protected $description = 'Hapus folder profil Chrome sisa scraping dan notifikasi lama';
+    protected $description = 'Hapus folder profil Chrome sisa scraping, notifikasi lama, dan log pemakaian AI lama';
 
     public function handle(): int
     {
@@ -34,7 +35,9 @@ class CleanupCommand extends Command
 
         $notifications = ScrapingNotification::where('created_at', '<', now()->subDays((int) $this->option('notifications-days')))->delete();
 
-        $this->info("{$removed} folder profil Chrome dan {$notifications} notifikasi lama dihapus.");
+        $aiLogs = AiUsageLog::where('created_at', '<', now()->subDays((int) $this->option('ai-log-days')))->delete();
+
+        $this->info("{$removed} folder profil Chrome, {$notifications} notifikasi lama, dan {$aiLogs} log AI lama dihapus.");
 
         return self::SUCCESS;
     }

@@ -29,7 +29,8 @@ class CheckReplies extends Command
             : ($lastCheck ? now()->parse($lastCheck)->subDay() : now()->subDays((int) config('leadhunter.imap.lookback_days', 14)));
 
         try {
-            $emails = $mailbox->fetchSince($since, fn (array $email) => $detector->match($email) !== null);
+            // Isi email diunduh untuk bounce (alamat penerima) dan balasan (klasifikasi).
+            $emails = $mailbox->fetchSince($since, fn (array $email) => $detector->isBounce($email) || $detector->match($email) !== null);
         } catch (Throwable $e) {
             $this->error('Gagal membaca inbox: '.$e->getMessage());
             report($e);
@@ -40,10 +41,14 @@ class CheckReplies extends Command
         $matched = $detector->process($emails);
         Cache::forever('imap_last_checked_at', now()->toIso8601String());
 
-        $this->info(count($emails)." email diperiksa, {$matched} outreach ditandai replied, {$detector->unsubscribed} minta berhenti.");
+        $this->info(count($emails)." email diperiksa, {$matched} outreach ditandai replied, {$detector->unsubscribed} minta berhenti, {$detector->bounced} bounce, {$detector->autoReplies} balasan otomatis diabaikan.");
 
         if ($matched > 0) {
             ScrapingNotification::notify('success', 'Balasan Baru', "{$matched} lead membalas outreach Anda. Status otomatis diubah menjadi Replied.");
+        }
+
+        if ($detector->bounced > 0) {
+            ScrapingNotification::notify('error', 'Email Bounce', "{$detector->bounced} email tidak sampai (alamat tidak valid). Alamatnya dimasukkan ke blacklist dengan alasan \"bounce\".");
         }
 
         if ($detector->unsubscribed > 0) {

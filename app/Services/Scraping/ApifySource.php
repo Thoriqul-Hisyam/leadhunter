@@ -59,6 +59,7 @@ class ApifySource implements LeadSource
                 'rating' => $item['totalScore'] ?? null,
                 'reviews_count' => $item['reviewsCount'] ?? null,
                 'google_maps_url' => $item['url'] ?? null,
+                'place_id' => $item['placeId'] ?? null,
             ]);
         }
     }

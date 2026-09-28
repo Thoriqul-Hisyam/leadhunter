@@ -72,6 +72,21 @@ test('the settings page never renders stored secrets', function () {
         ->assertDontSee('abcdefghijklmnop');
 });
 
+test('the pagespeed api key is stored encrypted and used by the website audit', function () {
+    $this->put(route('settings.connections'), connectionPayload(['pagespeed_api_key' => 'AIza-rahasia']));
+
+    expect(Setting::find('pagespeed_api_key')->value)->not->toContain('AIza')
+        ->and(Setting::get('pagespeed_api_key'))->toBe('AIza-rahasia');
+
+    RuntimeConfig::apply();
+    expect(config('services.pagespeed.key'))->toBe('AIza-rahasia');
+
+    $this->get(route('settings.edit'))->assertSee('Hapus API key tersimpan')->assertDontSee('AIza-rahasia');
+
+    $this->put(route('settings.connections'), connectionPayload(['clear_pagespeed_api_key' => '1']));
+    expect(Setting::get('pagespeed_api_key'))->toBe('');
+});
+
 test('smtp mode requires host, port, username and sender address', function () {
     $this->put(route('settings.connections'), ['mail_mailer' => 'smtp'])
         ->assertSessionHasErrors(['mail_host', 'mail_port', 'mail_username', 'mail_from_address']);

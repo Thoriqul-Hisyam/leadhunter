@@ -44,9 +44,38 @@ return [
 
     'sending' => [
         'hourly_limit' => (int) env('OUTREACH_HOURLY_LIMIT', 20),
+        'daily_limit' => (int) env('OUTREACH_DAILY_LIMIT', 80),
         'min_gap_seconds' => (int) env('OUTREACH_MIN_GAP_SECONDS', 90),
         'max_gap_seconds' => (int) env('OUTREACH_MAX_GAP_SECONDS', 240),
         'max_attempts' => (int) env('OUTREACH_MAX_ATTEMPTS', 3),
+
+        // Jendela kirim otomatis (waktu APP_TIMEZONE). Di luar jendela, antrean menunggu.
+        'window_start' => env('OUTREACH_WINDOW_START', '08:00'),
+        'window_end' => env('OUTREACH_WINDOW_END', '16:00'),
+        'weekdays_only' => (bool) env('OUTREACH_WEEKDAYS_ONLY', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | WhatsApp Gateway
+    |--------------------------------------------------------------------------
+    |
+    | driver: manual (click-to-chat wa.me), fonnte, wablas. Diatur dari halaman
+    | Pengaturan; nilai di sini hanya default. Batasnya sengaja lebih ketat dari email
+    | karena gateway tidak resmi berisiko membuat nomor pengirim diblokir.
+    |
+    */
+
+    'whatsapp' => [
+        'driver' => env('WA_DRIVER', 'manual'),
+        'token' => env('WA_TOKEN'),
+        'base_url' => env('WA_BASE_URL'),
+        'hourly_limit' => (int) env('WA_HOURLY_LIMIT', 10),
+        'daily_limit' => (int) env('WA_DAILY_LIMIT', 50),
+        'min_gap_seconds' => (int) env('WA_MIN_GAP_SECONDS', 180),
+        'max_gap_seconds' => (int) env('WA_MAX_GAP_SECONDS', 480),
+        'allow_landline' => (bool) env('WA_ALLOW_LANDLINE', false),
+        'webhook_token' => env('WA_WEBHOOK_TOKEN'),
     ],
 
     /*

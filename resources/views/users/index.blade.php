@@ -100,7 +100,7 @@
                                             <span>{{ $role->name }}</span>
                                         </span>
                                     @empty
-                                        <span class="inline-flex text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">No Role</span>
+                                        <span class="inline-flex text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">Tanpa Role</span>
                                     @endforelse
                                 </div>
                             </td>
@@ -110,7 +110,7 @@
                                 <div class="flex items-center justify-end gap-2.5">
                                     {{-- Edit link --}}
                                     <a href="{{ route('users.edit', $user->id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-                                        <span>Edit</span>
+                                        <span>Ubah</span>
                                     </a>
 
                                     @if($user->id !== auth()->id())

@@ -11,13 +11,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
         </div>
-        <span>Your Campaigns</span>
+        <span>Campaign Anda</span>
     </div>
     <a href="{{ route('campaigns.create') }}" class="btn-primary">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
         </svg>
-        <span>New Campaign</span>
+        <span>Campaign Baru</span>
     </a>
 </div>
 
@@ -37,10 +37,10 @@
                 <tr>
                     <th>Campaign</th>
                     <th>Target Niche</th>
-                    <th>Target Location</th>
+                    <th>Target Lokasi</th>
                     <th>Pesan · Terkirim · Dibalas</th>
-                    <th>Created</th>
-                    <th class="text-right">Actions</th>
+                    <th>Dibuat</th>
+                    <th class="text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -72,10 +72,10 @@
                             <span class="text-[10px] text-slate-400">({{ round($campaign->replied_count / $campaign->delivered_count * 100, 1) }}%)</span>
                         @endif
                     </td>
-                    <td class="text-slate-500 dark:text-slate-400 text-sm">{{ $campaign->created_at->format('M d, Y') }}</td>
+                    <td class="text-slate-500 dark:text-slate-400 text-sm">{{ $campaign->created_at->translatedFormat('d M Y') }}</td>
                     <td>
                         <div class="flex items-center justify-end gap-1.5">
-                            <a href="{{ route('campaigns.show', $campaign) }}" class="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500 hover:text-white transition duration-200" title="View Details">
+                            <a href="{{ route('campaigns.show', $campaign) }}" class="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500 hover:text-white transition duration-200" title="Lihat Detail">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -86,10 +86,10 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-2.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                 </svg>
                             </a>
-                            <form action="{{ route('campaigns.destroy', $campaign) }}" method="POST" onsubmit="return handleConfirm(event, this, 'Delete Campaign?', 'Are you sure you want to delete this campaign? All generated outreach messages will also be permanently deleted.', 'Yes, Delete')" class="inline">
+                            <form action="{{ route('campaigns.destroy', $campaign) }}" method="POST" onsubmit="return handleConfirm(event, this, 'Hapus Campaign?', 'Yakin ingin menghapus campaign ini? Semua pesan outreach yang sudah dibuat juga akan terhapus permanen.', 'Ya, Hapus')" class="inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="p-2 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition duration-200 cursor-pointer" title="Delete Campaign">
+                                <button type="submit" class="p-2 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition duration-200 cursor-pointer" title="Hapus Campaign">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
@@ -107,8 +107,8 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                 </svg>
                             </div>
-                            <p class="font-semibold text-slate-500 dark:text-slate-400">No campaigns yet</p>
-                            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Create your first campaign to start hunting!</p>
+                            <p class="font-semibold text-slate-500 dark:text-slate-400">Belum ada campaign</p>
+                            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Buat campaign pertama Anda untuk mulai berburu lead!</p>
                         </div>
                     </td>
                 </tr>

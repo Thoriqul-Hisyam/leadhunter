@@ -1,7 +1,7 @@
 ﻿@extends('layouts.app')
 
-@section('title', 'Outreach Templates - Sandesa')
-@section('header', 'Message Templates')
+@section('title', 'Template Outreach - Sandesa')
+@section('header', 'Template Pesan')
 
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
@@ -14,15 +14,15 @@
                 </svg>
             </div>
             <div>
-                <h3 class="text-base font-bold text-slate-900 dark:text-white">Outreach Template Library</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Create, edit, and manage high-converting prebuilt templates categorized by niche and outreach channels.</p>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white">Pustaka Template Outreach</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Buat, ubah, dan kelola template siap pakai yang dikelompokkan per niche dan channel outreach.</p>
             </div>
         </div>
         <a href="{{ route('templates.create') }}" class="btn-primary py-2.5 px-5 text-xs font-bold shadow-lg shadow-indigo-500/25 rounded-xl flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <span>Create Template</span>
+            <span>Buat Template</span>
         </a>
     </div>
 
@@ -45,11 +45,11 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </span>
-                    <input id="niche-filter-input" type="text" name="niche" placeholder="Search template name, niche, channel, tone, language, subject..." value="{{ request('niche') }}" class="w-full pl-8 pr-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200">
+                    <input id="niche-filter-input" type="text" name="niche" placeholder="Cari nama template, niche, channel, nada, bahasa, subjek..." value="{{ request('niche') }}" class="w-full pl-8 pr-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200">
                 </div>
                 <input type="hidden" name="channel" id="channel-filter" value="{{ request('channel', '') }}">
                 <div class="grid grid-cols-3 gap-1">
-                    <button type="button" class="channel-filter-btn px-2 py-2 text-[10px] font-bold rounded-lg border transition {{ request('channel', '') === '' ? 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400' }}" data-value="">All</button>
+                    <button type="button" class="channel-filter-btn px-2 py-2 text-[10px] font-bold rounded-lg border transition {{ request('channel', '') === '' ? 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400' }}" data-value="">Semua</button>
                     <button type="button" class="channel-filter-btn px-2 py-2 text-[10px] font-bold rounded-lg border transition {{ request('channel') === 'email' ? 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400' }}" data-value="email">Email</button>
                     <button type="button" class="channel-filter-btn px-2 py-2 text-[10px] font-bold rounded-lg border transition {{ request('channel') === 'whatsapp' ? 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400' }}" data-value="whatsapp">WhatsApp</button>
                 </div>
@@ -114,7 +114,7 @@
                 }
             } catch (err) {
                 console.error('Failed to fetch templates:', err);
-                window.showToast('Failed to load templates.', 'error');
+                window.showToast('Gagal memuat template.', 'error');
             } finally {
                 tableContainer.classList.remove('opacity-60');
             }
@@ -162,8 +162,8 @@
         const oldState = checkbox.checked;
         
         // Optimistic UI updates
-        label.textContent = checkbox.checked ? 'Active' : 'Inactive';
-        
+        label.textContent = checkbox.checked ? 'Aktif' : 'Nonaktif';
+
         try {
             const response = await fetch(`/templates/${id}/toggle`, {
                 method: 'POST',
@@ -177,15 +177,15 @@
             
             if (response.ok && result.status === 'success') {
                 checkbox.checked = result.is_active;
-                label.textContent = result.is_active ? 'Active' : 'Inactive';
-                window.showToast('Template status updated successfully!', 'success');
+                label.textContent = result.is_active ? 'Aktif' : 'Nonaktif';
+                window.showToast('Status template berhasil diperbarui.', 'success');
             } else {
                 throw new Error('Failed');
             }
         } catch (e) {
             checkbox.checked = !oldState;
-            label.textContent = !oldState ? 'Active' : 'Inactive';
-            window.showToast('Failed to toggle template status.', 'error');
+            label.textContent = !oldState ? 'Aktif' : 'Nonaktif';
+            window.showToast('Gagal mengubah status template.', 'error');
         }
     }
 </script>

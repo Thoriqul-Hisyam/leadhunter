@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', $campaign->name . ' — Campaigns')
-@section('header', 'Campaign Details')
+@section('title', $campaign->name . ' — Campaign')
+@section('header', 'Detail Campaign')
 
 @section('content')
 <div class="max-w-7xl mx-auto space-y-6">
@@ -26,7 +26,7 @@
                         {{ $campaign->location }}
                     </span>
                     <span class="text-xs text-slate-400 dark:text-slate-500">•</span>
-                    <span class="text-xs text-slate-500 dark:text-slate-400">Created on {{ $campaign->created_at->format('M d, Y') }}</span>
+                    <span class="text-xs text-slate-500 dark:text-slate-400">Dibuat {{ $campaign->created_at->translatedFormat('d M Y') }}</span>
                 </div>
             </div>
         </div>
@@ -36,17 +36,17 @@
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-2.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
-                <span>Edit Settings</span>
+                <span>Edit Campaign</span>
             </a>
             <div class="flex flex-col sm:flex-row gap-3">
-                <form action="{{ route('campaigns.destroy', $campaign) }}" method="POST" onsubmit="return handleConfirm(event, this, 'Delete Campaign?', 'Are you sure you want to delete this campaign? All generated outreach messages will also be permanently deleted.', 'Yes, Delete')" class="flex-1 sm:flex-initial">
+                <form action="{{ route('campaigns.destroy', $campaign) }}" method="POST" onsubmit="return handleConfirm(event, this, 'Hapus Campaign?', 'Yakin ingin menghapus campaign ini? Semua pesan outreach di dalamnya juga akan terhapus permanen.', 'Ya, Hapus')" class="flex-1 sm:flex-initial">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn-secondary w-full justify-center text-rose-600 hover:bg-rose-50 hover:border-rose-200 py-2.5 px-4 text-xs font-bold rounded-xl flex items-center gap-1.5 transition cursor-pointer">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        <span>Delete Campaign</span>
+                        <span>Hapus Campaign</span>
                     </button>
                 </form>
             </div>
@@ -91,7 +91,7 @@
         {{-- Total Leads --}}
         <div class="dash-card">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Leads</span>
+                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Lead</span>
                 <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -99,13 +99,13 @@
                 </div>
             </div>
             <div class="text-2xl font-black text-slate-900 dark:text-white">{{ $groupedMessages->count() }}</div>
-            <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Unique prospects targeted</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Calon klien yang dituju</div>
         </div>
 
         {{-- Total Messages --}}
         <div class="dash-card">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Outreach Copies</span>
+                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pesan Dibuat</span>
                 <div class="p-2 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -113,13 +113,13 @@
                 </div>
             </div>
             <div class="text-2xl font-black text-slate-900 dark:text-white">{{ $totalMessages }}</div>
-            <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">AI drafts generated</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Draft pesan di campaign ini</div>
         </div>
 
         {{-- Sent Out --}}
         <div class="dash-card">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sent Messages</span>
+                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pesan Terkirim</span>
                 <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -129,9 +129,9 @@
             <div class="text-2xl font-black text-slate-900 dark:text-white">{{ $sentCount }}</div>
             <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
                 @if($totalMessages > 0)
-                    {{ round(($sentCount / $totalMessages) * 100) }}% completion rate
+                    {{ round(($sentCount / $totalMessages) * 100) }}% dari semua pesan
                 @else
-                    0% completion rate
+                    0% dari semua pesan
                 @endif
             </div>
         </div>
@@ -139,7 +139,7 @@
         {{-- Conversions (Replied) --}}
         <div class="dash-card">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Replies / Conversions</span>
+                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Balasan</span>
                 <div class="p-2 rounded-lg bg-pink-500/10 text-pink-600 dark:text-pink-400">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 013 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1" />
@@ -149,13 +149,15 @@
             <div class="text-2xl font-black text-slate-900 dark:text-white">{{ $repliedCount }}</div>
             <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
                 @if($sentCount > 0)
-                    {{ round(($repliedCount / $sentCount) * 100) }}% conversion rate
+                    {{ round(($repliedCount / $sentCount) * 100) }}% reply rate
                 @else
-                    0% conversion rate
+                    0% reply rate
                 @endif
             </div>
         </div>
     </div>
+
+    @include('campaigns.partials.sequence')
 
     {{-- Main Grid: Leads List & Message Reviewer --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="animation: fadeInUp 0.4s ease backwards; animation-delay: 0.05s;">
@@ -164,8 +166,8 @@
         <div class="lg:col-span-1 space-y-4">
             <div class="glass-card p-5 flex flex-col max-h-[700px]">
                 <div class="mb-4">
-                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">Leads in this Campaign</h3>
-                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Click a lead to review their personalized messages</p>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">Lead di Campaign Ini</h3>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Klik lead untuk meninjau pesan personalnya</p>
                 </div>
 
                 <div class="overflow-y-auto space-y-2 flex-1 pr-1" id="campaign-leads-list">
@@ -187,13 +189,13 @@
                                 
                                 <div class="flex gap-1">
                                     @foreach($leadMessages as $msg)
-                                        <span class="p-1 rounded bg-slate-100 dark:bg-slate-800 text-[10px]" title="{{ ucfirst($msg->type) }}: {{ ucfirst($msg->status) }}">
+                                        <span class="p-1 rounded bg-slate-100 dark:bg-slate-800 text-[10px]" title="{{ ucfirst($msg->type) }}: {{ $msg->statusLabel() }}">
                                             @if($msg->type === 'email')
                                                 <x-icon name="envelope" class="w-3 h-3 inline-block" />
                                             @else
                                                 <x-icon name="chat" class="w-3 h-3 inline-block" />
                                             @endif
-                                            <span class="font-bold text-[8px] uppercase @if($msg->status === 'sent') text-emerald-600 dark:text-emerald-400 @elseif($msg->status === 'replied') text-indigo-600 dark:text-indigo-400 @elseif($msg->status === 'failed') text-rose-600 @else text-slate-400 @endif">{{ substr($msg->status, 0, 1) }}</span>
+                                            <span class="font-bold text-[8px] uppercase @if($msg->status === 'sent') text-emerald-600 dark:text-emerald-400 @elseif($msg->status === 'replied') text-indigo-600 dark:text-indigo-400 @elseif($msg->status === 'failed') text-rose-600 @else text-slate-400 @endif">{{ mb_substr($msg->statusLabel(), 0, 1) }}</span>
                                         </span>
                                     @endforeach
                                 </div>
@@ -204,8 +206,8 @@
                             <svg class="w-10 h-10 mx-auto mb-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
-                            <p class="text-xs font-bold text-slate-500">No leads linked to this campaign.</p>
-                            <a href="{{ route('campaigns.edit', $campaign) }}" class="text-[10px] text-indigo-500 font-bold hover:underline mt-1.5 inline-flex items-center gap-1">Add leads now <x-icon name="arrow-right" class="w-3 h-3" /></a>
+                            <p class="text-xs font-bold text-slate-500">Belum ada lead di campaign ini.</p>
+                            <a href="{{ route('campaigns.edit', $campaign) }}" class="text-[10px] text-indigo-500 font-bold hover:underline mt-1.5 inline-flex items-center gap-1">Tambah lead sekarang <x-icon name="arrow-right" class="w-3 h-3" /></a>
                         </div>
                     @endforelse
                 </div>
@@ -222,8 +224,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                     </div>
-                    <h4 class="font-bold text-sm text-slate-800 dark:text-white">Review Outreach Copy</h4>
-                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-xs">Select a lead from the index on the left to view, edit, or send their custom outreach campaigns.</p>
+                    <h4 class="font-bold text-sm text-slate-800 dark:text-white">Tinjau Pesan Outreach</h4>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-xs">Pilih lead di daftar sebelah kiri untuk melihat, mengedit, atau mengirim pesannya.</p>
                 </div>
 
                 {{-- Message templates (hidden by default, loaded via JS) --}}
@@ -317,9 +319,13 @@
                                             </span>
                                             <div>
                                                 <h4 class="font-bold text-xs text-slate-800 dark:text-white uppercase tracking-wider">
-                                                    @if($isEmail) Email Outreach @else WhatsApp Click-to-Chat @endif
+                                                    @if($isEmail) Email @else WhatsApp{{ $waGatewayActive ? '' : ' (click-to-chat)' }} @endif
                                                 </h4>
-                                                <p class="text-[10px] text-slate-400 dark:text-slate-500">Copy matches niche: {{ $campaign->niche }}</p>
+                                                <p class="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                                    <span>Langkah {{ max(1, (int) $message->step) }} · {{ $message->isSequenceStep() ? 'follow-up' : 'pesan pembuka' }}</span>
+                                                    @include('outreach.partials.reply-category')
+                                                    @include('outreach.partials.review-badge')
+                                                </p>
                                             </div>
                                         </div>
                                         
@@ -327,14 +333,21 @@
                                         <div class="relative shrink-0 w-full sm:w-auto">
                                             <form action="{{ route('outreach.status', $message) }}" method="POST" class="flex items-center gap-1.5 flex-wrap justify-end">
                                                 @csrf
-                                                <button type="submit" name="status" value="pending" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold transition cursor-pointer {{ $message->status === 'pending' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-amber-400/40' }}">Pending</button>
-                                                <button type="submit" name="status" value="sent" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold transition cursor-pointer {{ $message->status === 'sent' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-emerald-400/40' }}">Sent</button>
-                                                <button type="submit" name="status" value="replied" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold transition cursor-pointer {{ $message->status === 'replied' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-700 dark:text-indigo-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400/40' }}">Replied</button>
-                                                <button type="submit" name="status" value="failed" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold transition cursor-pointer {{ $message->status === 'failed' ? 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-rose-400/40' }}">Failed</button>
+                                                <button type="submit" name="status" value="pending" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold transition cursor-pointer {{ $message->status === 'pending' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-amber-400/40' }}">Draft</button>
+                                                <button type="submit" name="status" value="sent" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold transition cursor-pointer {{ $message->status === 'sent' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-emerald-400/40' }}">Terkirim</button>
+                                                <button type="submit" name="status" value="replied" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold transition cursor-pointer {{ $message->status === 'replied' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-700 dark:text-indigo-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400/40' }}">Dibalas</button>
+                                                <button type="submit" name="status" value="failed" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold transition cursor-pointer {{ $message->status === 'failed' ? 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-rose-400/40' }}">Gagal</button>
                                             </form>
                                         </div>
                                     </div>
                                     
+                                    @if($message->reply_excerpt)
+                                        <div class="mb-4 p-3 rounded-xl border-l-4 {{ $message->reply_category === 'auto_reply' ? 'border-slate-300 bg-slate-50 dark:bg-slate-900/40' : 'border-emerald-400 bg-emerald-500/5' }}">
+                                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1"><x-icon name="reply" class="w-3 h-3" /> {{ $message->reply_category === 'auto_reply' ? 'Balasan otomatis (diabaikan)' : 'Balasan lead' }}</div>
+                                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line">{{ \Illuminate\Support\Str::limit($message->reply_excerpt, 400) }}</p>
+                                        </div>
+                                    @endif
+
                                     {{-- Message Body Review & Save Form --}}
                                     <form action="{{ route('outreach.update', $message) }}" method="POST" class="space-y-4">
                                         @csrf
@@ -343,10 +356,10 @@
                                         @if($isEmail)
                                             {{-- Interactive Premium Subject Input --}}
                                             <div class="space-y-1.5">
-                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Email Subject</label>
+                                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Subjek Email</label>
                                                 <div class="relative flex items-center group/input">
-                                                    <span class="absolute left-3.5 text-slate-400 dark:text-slate-500 font-bold text-xs select-none">Subject:</span>
-                                                    <input type="text" name="subject" id="campaignSubject-{{ $message->id }}" value="{{ $message->subject }}" oninput="markAsUnsaved({{ $message->id }})" class="w-full pl-18 pr-4 py-2.5 text-xs font-semibold bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-slate-850 dark:text-slate-100 transition shadow-2xs" placeholder="Enter email subject...">
+                                                    <span class="absolute left-3.5 text-slate-400 dark:text-slate-500 font-bold text-xs select-none">Subjek:</span>
+                                                    <input type="text" name="subject" id="campaignSubject-{{ $message->id }}" value="{{ $message->subject }}" oninput="markAsUnsaved({{ $message->id }})" class="w-full pl-18 pr-4 py-2.5 text-xs font-semibold bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-slate-850 dark:text-slate-100 transition shadow-2xs" placeholder="Tulis subjek email...">
                                                 </div>
                                             </div>
                                         @endif
@@ -356,12 +369,12 @@
                                             <div class="p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-xl">
                                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 mb-2 flex items-center gap-1.5">
                                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                                    Regenerate with AI
+                                                    Generate Ulang dengan AI
                                                 </label>
                                                 <div class="flex flex-col gap-2">
-                                                    <textarea id="customPrompt-{{ $message->id }}" rows="2" class="w-full text-xs font-medium bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none" placeholder="Optional: Enter a custom prompt (e.g. 'Make it more funny')"></textarea>
+                                                    <textarea id="customPrompt-{{ $message->id }}" rows="2" class="w-full text-xs font-medium bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none" placeholder="Opsional: instruksi tambahan (mis. 'Buat lebih singkat')"></textarea>
                                                     <button type="button" onclick="regenerateCampaignMessage({{ $message->id }}, this)" class="btn-primary py-2 px-4 text-[10px] self-end shadow-md shadow-indigo-500/20 cursor-pointer inline-flex items-center gap-1.5">
-                                                        <x-icon name="sparkles" class="w-3.5 h-3.5" /> Regenerate Now
+                                                        <x-icon name="sparkles" class="w-3.5 h-3.5" /> Generate Ulang
                                                     </button>
                                                 </div>
                                             </div>
@@ -369,9 +382,9 @@
 
                                         {{-- Message Textarea --}}
                                         <div class="space-y-1.5">
-                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Outreach Message Body</label>
+                                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Isi Pesan</label>
                                             <textarea name="message" id="campaignMessage-{{ $message->id }}" rows="6" oninput="markAsUnsaved({{ $message->id }})" class="w-full text-xs font-medium bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 focus:ring-4 outline-none leading-relaxed text-slate-700 dark:text-slate-200 resize-y shadow-2xs transition-all duration-200
-                                                @if($isEmail) focus:ring-indigo-500/10 focus:border-indigo-500 @else focus:ring-emerald-500/10 focus:border-emerald-500 @endif" placeholder="Enter custom message copy...">{{ $message->message }}</textarea>
+                                                @if($isEmail) focus:ring-indigo-500/10 focus:border-indigo-500 @else focus:ring-emerald-500/10 focus:border-emerald-500 @endif" placeholder="Tulis isi pesan...">{{ $message->message }}</textarea>
                                         </div>
                                         
                                         {{-- Form Actions (Save draft changes and send outreach trigger) --}}
@@ -381,10 +394,10 @@
                                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                                                     </svg>
-                                                    <span>Save Changes</span>
+                                                    <span>Simpan Perubahan</span>
                                                 </button>
                                                 <span id="unsavedWarning-{{ $message->id }}" class="hidden text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 items-center gap-1">
-                                                    <x-icon name="warning" class="w-3 h-3 inline-block" /> Unsaved changes
+                                                    <x-icon name="warning" class="w-3 h-3 inline-block" /> Belum disimpan
                                                 </span>
                                             </div>
                                             
@@ -393,18 +406,30 @@
                                                     <span class="text-[10px] font-semibold text-rose-600 dark:text-rose-400 max-w-55 truncate" title="{{ $message->last_error }}"><x-icon name="warning" class="w-3 h-3 inline-block align-[-2px]" /> {{ $message->last_error }}</span>
                                                 @endif
                                                 @if($message->status === 'queued')
-                                                    <span class="badge badge-queued px-3 py-1.5 text-[10px] gap-1"><x-icon name="clock" class="w-3 h-3" /> Antrean{{ $message->scheduled_at ? ' · '.$message->scheduled_at->format('d M H:i') : ' · diproses' }}</span>
-                                                @elseif($isEmail && $message->isDelivered())
-                                                    <span class="badge badge-sent px-3 py-1.5 text-[10px] gap-1"><x-icon name="check-circle" class="w-3 h-3" /> Terkirim{{ $message->sent_at ? ' · '.$message->sent_at->format('d M H:i') : '' }}</span>
+                                                    <span class="badge badge-queued px-3 py-1.5 text-[10px] gap-1"><x-icon name="clock" class="w-3 h-3" /> Antrean{{ $message->scheduled_at ? ' · '.$message->scheduled_at->translatedFormat('d M H:i') : ' · diproses' }}</span>
+                                                @elseif(($isEmail || $waGatewayActive) && $message->isDelivered())
+                                                    <span class="badge badge-sent px-3 py-1.5 text-[10px] gap-1"><x-icon name="check-circle" class="w-3 h-3" /> Terkirim{{ $message->sent_at ? ' · '.$message->sent_at->translatedFormat('d M H:i') : '' }}</span>
+                                                @elseif(! $isEmail && $waGatewayActive)
+                                                    @if(! $lead->phone_is_mobile)
+                                                        <span class="text-[10px] font-semibold text-amber-600 dark:text-amber-400" title="Nomor kantor belum tentu terdaftar di WhatsApp">Nomor kantor</span>
+                                                    @endif
+                                                    {{-- Kirim otomatis lewat gateway --}}
+                                                    <button type="button" onclick="sendDirectEmail(this, '{{ route('outreach.send', $message) }}', 'WhatsApp')" class="relative overflow-hidden px-4 py-2 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-xl text-xs transition duration-200 flex items-center gap-1.5 cursor-pointer">
+                                                        <x-icon name="send" class="w-3.5 h-3.5" />
+                                                        <span>Kirim WhatsApp</span>
+                                                    </button>
                                                 @elseif($isEmail)
                                                     {{-- SMTP Direct Send Button --}}
                                                     <button type="button" onclick="sendDirectEmail(this, '{{ route('outreach.send', $message) }}')" class="relative overflow-hidden px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl text-xs hover:shadow-md hover:shadow-indigo-500/10 hover:-translate-y-0.5 active:translate-y-0 transition duration-200 flex items-center gap-1.5 cursor-pointer">
                                                         <svg class="w-3.5 h-3.5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                                         </svg>
-                                                        <span>Send Email Now</span>
+                                                        <span>Kirim Email</span>
                                                     </button>
                                                 @else
+                                                    @if($lead->phone && ! $lead->phone_is_mobile)
+                                                        <span class="text-[10px] font-semibold text-amber-600 dark:text-amber-400" title="Nomor kantor belum tentu terdaftar di WhatsApp">Nomor kantor</span>
+                                                    @endif
                                                     {{-- WhatsApp Click-to-Chat Trigger --}}
                                                     <button type="button"
                                                         data-wa-url="{{ \App\Helpers\Phone::whatsAppUrl($lead->phone, $message->message) }}"
@@ -413,7 +438,7 @@
                                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                                         </svg>
-                                                        <span>WhatsApp Chat</span>
+                                                        <span>Buka WhatsApp</span>
                                                     </button>
                                                 @endif
                                             </div>
@@ -490,18 +515,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 3000);
 })();
 
-async function sendDirectEmail(btn, url) {
+async function sendDirectEmail(btn, url, channel = 'Email') {
     if (!btn.dataset.confirmed) {
-        handleConfirmAction('Send Email?', 'Are you sure you want to send this email via SMTP now?', 'Yes, Send', () => {
+        handleConfirmAction('Kirim ' + channel + '?', 'Pesan ' + channel + ' ini akan dikirim sekarang juga.', 'Ya, kirim', () => {
             btn.dataset.confirmed = 'true';
-            sendDirectEmail(btn, url);
+            sendDirectEmail(btn, url, channel);
         });
         return;
     }
     delete btn.dataset.confirmed;
     
     const originalContent = btn.innerHTML;
-    btn.innerHTML = 'Sending...';
+    btn.innerHTML = 'Mengirim...';
     btn.disabled = true;
     
     try {
@@ -520,11 +545,11 @@ async function sendDirectEmail(btn, url) {
             window.showToast(result.message || 'Email terkirim!', 'success');
             setTimeout(() => location.reload(), 1500);
         } else {
-            window.showToast('Failed to send: ' + (result.message || 'SMTP Server Error.'), 'error');
+            window.showToast('Gagal mengirim: ' + (result.message || 'server email error.'), 'error');
         }
     } catch (e) {
         console.error(e);
-        window.showToast('Network/server error sending email.', 'error');
+        window.showToast('Gagal terhubung ke server saat mengirim.', 'error');
     } finally {
         btn.innerHTML = originalContent;
         btn.disabled = false;
@@ -547,7 +572,7 @@ function triggerWhatsAppChat(btn) {
     window.open(waUrl, '_blank');
     
     // 3. Prompt user if they want to update status to "Sent" automatically!
-    handleConfirmAction('WhatsApp Sent?', 'Did you send the WhatsApp message? Update outreach status to Sent?', 'Yes, Update', () => {
+    handleConfirmAction('WhatsApp sudah dikirim?', 'Apakah pesan WhatsApp tadi sudah Anda kirim? Ubah status pesan menjadi Terkirim?', 'Ya, ubah', () => {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = statusUrl;
@@ -574,7 +599,7 @@ async function regenerateCampaignMessage(messageId, btn) {
     const customPrompt = document.getElementById('customPrompt-' + messageId).value.trim();
     const originalText = btn.innerHTML;
     
-    btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating...';
+    btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Membuat...';
     btn.disabled = true;
     
     try {
@@ -597,13 +622,13 @@ async function regenerateCampaignMessage(messageId, btn) {
             }
             document.getElementById('campaignMessage-' + messageId).value = data.message;
             markAsUnsaved(messageId);
-            window.showToast('Message regenerated! Please Save Changes before sending.', 'success');
+            window.showToast('Pesan baru dibuat. Tekan Simpan Perubahan sebelum mengirim.', 'success');
         } else {
-            window.showToast(data.message || 'Error regenerating message.', 'error');
+            window.showToast(data.message || 'Gagal membuat ulang pesan.', 'error');
         }
     } catch (e) {
         console.error(e);
-        window.showToast('Network error while regenerating.', 'error');
+        window.showToast('Gagal terhubung ke server saat membuat ulang pesan.', 'error');
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;

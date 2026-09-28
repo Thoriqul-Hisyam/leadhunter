@@ -1,5 +1,7 @@
 <?php
 
+use App\Jobs\HeartbeatJob;
+use App\Services\SystemHealth;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -18,6 +20,15 @@ Artisan::command('inspire', function () {
 |
 */
 
+// Detak scheduler + cek apakah setiap queue worker masih memproses job
+Schedule::call(function () {
+    SystemHealth::beatScheduler();
+
+    foreach (SystemHealth::QUEUES as $queue) {
+        HeartbeatJob::dispatch($queue);
+    }
+})->everyMinute()->name('heartbeat')->withoutOverlapping();
+
 // Kirim email antrean yang jatuh tempo (batas per jam + jeda acak)
 Schedule::command('outreach:send-due')->everyMinute()->withoutOverlapping();
 
@@ -32,3 +43,6 @@ Schedule::command('outreach:check-replies')->everyTenMinutes()->withoutOverlappi
 
 // Bersihkan profil Chrome sisa scraping & notifikasi lama
 Schedule::command('leadhunter:cleanup')->daily();
+
+// Laporan mingguan ke email admin, Senin pagi
+Schedule::command('leadhunter:weekly-report')->weeklyOn(1, '07:00')->withoutOverlapping();

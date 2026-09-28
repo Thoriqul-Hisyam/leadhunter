@@ -70,6 +70,11 @@ class MessageTemplateController extends Controller
             'subject' => 'nullable|required_if:channel,email|string|max:255',
             'body' => 'required|string',
             'is_active' => 'nullable|boolean',
+        ], [
+            'name.required' => 'Nama template wajib diisi.',
+            'niche.required' => 'Niche wajib diisi.',
+            'subject.required_if' => 'Subjek wajib diisi untuk template Email.',
+            'body.required' => 'Isi pesan wajib diisi.',
         ]);
 
         $data['niche'] = strtolower(trim($data['niche']));
@@ -77,7 +82,7 @@ class MessageTemplateController extends Controller
 
         MessageTemplate::create($data);
 
-        return redirect()->route('templates.index')->with('success', 'Template created successfully!');
+        return redirect()->route('templates.index')->with('success', 'Template berhasil dibuat.');
     }
 
     /**
@@ -102,6 +107,11 @@ class MessageTemplateController extends Controller
             'subject' => 'nullable|required_if:channel,email|string|max:255',
             'body' => 'required|string',
             'is_active' => 'nullable|boolean',
+        ], [
+            'name.required' => 'Nama template wajib diisi.',
+            'niche.required' => 'Niche wajib diisi.',
+            'subject.required_if' => 'Subjek wajib diisi untuk template Email.',
+            'body.required' => 'Isi pesan wajib diisi.',
         ]);
 
         $data['niche'] = strtolower(trim($data['niche']));
@@ -109,7 +119,7 @@ class MessageTemplateController extends Controller
 
         $template->update($data);
 
-        return redirect()->route('templates.index')->with('success', 'Template updated successfully!');
+        return redirect()->route('templates.index')->with('success', 'Template berhasil diperbarui.');
     }
 
     /**
@@ -119,7 +129,7 @@ class MessageTemplateController extends Controller
     {
         $template->delete();
 
-        return redirect()->route('templates.index')->with('success', 'Template deleted successfully!');
+        return redirect()->route('templates.index')->with('success', 'Template berhasil dihapus.');
     }
 
     /**
@@ -168,7 +178,7 @@ class MessageTemplateController extends Controller
         return response()->json([
             'status' => 'success',
             'is_active' => $template->is_active,
-            'message' => 'Template status updated!'
+            'message' => 'Status template diperbarui.'
         ]);
     }
 }

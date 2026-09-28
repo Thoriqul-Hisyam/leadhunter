@@ -41,6 +41,12 @@ class PuppeteerGoogleMapsSource implements LeadSource
             throw new ScrapeFailedException("Scraping melebihi batas waktu {$timeout} detik. Lead yang sudah ditemukan tetap tersimpan.", 0, $e);
         }
 
+        if ($result->exitCode() === 3 || str_contains($result->errorOutput(), 'BLOCKED:')) {
+            throw new ScrapeFailedException(str_contains($result->errorOutput(), 'BLOCKED:consent')
+                ? 'Google Maps tertahan di halaman persetujuan cookie. Coba lagi, atau gunakan SCRAPER_DRIVER=google_places.'
+                : 'Google Maps menampilkan CAPTCHA (terdeteksi sebagai bot). Tunggu beberapa jam dan kurangi frekuensi scraping, atau gunakan SCRAPER_DRIVER=google_places / apify.');
+        }
+
         if ($result->failed()) {
             $error = trim(Str::afterLast(trim($result->errorOutput()), "\n")) ?: "exit code {$result->exitCode()}";
 

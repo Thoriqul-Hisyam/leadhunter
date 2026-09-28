@@ -6,14 +6,14 @@
 @section('content')
 <div class="max-w-6xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
-        <a href="{{ route('campaigns.index') }}" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition" title="Back to Campaigns">
+        <a href="{{ route('campaigns.index') }}" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition" title="Kembali ke Campaign">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
         </a>
         <div>
-            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Configure Campaign</h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Update metadata and select target leads</p>
+            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Atur Campaign</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Perbarui info campaign dan pilih target lead</p>
         </div>
     </div>
 
@@ -32,14 +32,14 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-bold text-slate-900 dark:text-white">Edit Campaign</h3>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Change core properties</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Ubah detail utama</p>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div>
-                        <label for="name" class="form-label text-xs font-semibold">Campaign Name</label>
-                        <input type="text" name="name" id="name" value="{{ old('name', $campaign->name) }}" placeholder="e.g. Surabaya Dental Web Sales" required class="form-input text-sm">
+                        <label for="name" class="form-label text-xs font-semibold">Nama Campaign</label>
+                        <input type="text" name="name" id="name" value="{{ old('name', $campaign->name) }}" placeholder="mis. Penawaran Website Klinik Gigi Surabaya" required class="form-input text-sm">
                         @error('name')
                             <p class="text-rose-500 text-2xs mt-1">{{ $message }}</p>
                         @enderror
@@ -47,15 +47,15 @@
 
                     <div>
                         <label for="niche" class="form-label text-xs font-semibold">Target Niche</label>
-                        <input type="text" name="niche" id="niche" value="{{ old('niche', $campaign->niche) }}" placeholder="e.g. cafe, dentist, salon" required class="form-input text-sm">
+                        <input type="text" name="niche" id="niche" value="{{ old('niche', $campaign->niche) }}" placeholder="mis. cafe, klinik gigi, salon" required class="form-input text-sm">
                         @error('niche')
                             <p class="text-rose-500 text-2xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <div>
-                        <label for="location" class="form-label text-xs font-semibold">Target Location</label>
-                        <input type="text" name="location" id="location" value="{{ old('location', $campaign->location) }}" placeholder="e.g. Surabaya, Jakarta, Bali" required class="form-input text-sm">
+                        <label for="location" class="form-label text-xs font-semibold">Target Lokasi</label>
+                        <input type="text" name="location" id="location" value="{{ old('location', $campaign->location) }}" placeholder="mis. Surabaya, Jakarta, Bali" required class="form-input text-sm">
                         @error('location')
                             <p class="text-rose-500 text-2xs mt-1">{{ $message }}</p>
                         @enderror
@@ -72,26 +72,26 @@
                             <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
-                            <span>Auto-Generate for New Leads</span>
+                            <span>Generate Otomatis untuk Lead Baru</span>
                         </label>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">AI will generate custom outreach messages *only* for the newly added leads. Existing outreaches are preserved.</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">AI akan membuat pesan outreach *hanya* untuk lead yang baru ditambahkan. Pesan outreach yang sudah ada tetap disimpan.</p>
                     </div>
                 </div>
 
                 <div id="channel-selection-group" class="pl-7 space-y-3 mt-4">
-                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Outreach Channels:</p>
+                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Channel Outreach:</p>
                     <label class="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer hover:text-slate-900 dark:hover:text-white transition">
                         <input type="checkbox" name="channels[]" value="email" checked class="form-checkbox rounded channel-checkbox">
                         <span>Email Penawaran Website</span>
                     </label>
                     <label class="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer hover:text-slate-900 dark:hover:text-white transition">
                         <input type="checkbox" name="channels[]" value="whatsapp" checked class="form-checkbox rounded channel-checkbox">
-                        <span>WhatsApp Click-to-Chat</span>
+                        <span>Pesan WhatsApp</span>
                     </label>
 
                     {{-- Generation Mode Selector --}}
                     <div class="pt-3 mt-3 border-t border-slate-200/60 dark:border-slate-700/50">
-                        <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5">Generation Mode:</p>
+                        <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5">Mode Penyusunan:</p>
                         <div class="grid grid-cols-2 gap-2">
                             <label class="mode-card relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all duration-200 border-indigo-500 bg-indigo-500/5 dark:bg-indigo-500/10 shadow-sm shadow-indigo-500/10" data-mode="ai_generate">
                                 <input type="radio" name="outreach_mode" value="ai_generate" checked class="sr-only">
@@ -112,10 +112,10 @@
 
                     {{-- Searchable Template Combobox --}}
                     <div id="template-selector-group" class="hidden pt-2 space-y-2 transition-all duration-300 relative custom-combobox" data-custom-init="true">
-                        <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Select Template:</label>
+                        <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Pilih Template:</label>
                         <input type="hidden" name="template_id" id="template_id" class="combobox-hidden-input">
                         <button type="button" class="combobox-trigger w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200 flex justify-between items-center cursor-pointer">
-                            <span class="combobox-label">- Choose a template -</span>
+                            <span class="combobox-label">- Pilih template -</span>
                             <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -127,10 +127,10 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                     </svg>
                                 </span>
-                                <input type="text" class="combobox-search w-full pl-7 pr-2.5 py-1 text-2xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200" placeholder="Search template...">
+                                <input type="text" class="combobox-search w-full pl-7 pr-2.5 py-1 text-2xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200" placeholder="Cari template...">
                             </div>
                             <div class="combobox-options max-h-40 overflow-y-auto space-y-1">
-                                <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" data-value="">- Choose a template -</div>
+                                <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" data-value="">- Pilih template -</div>
                                 @foreach($templates as $tmpl)
                                     <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" 
                                          data-value="{{ $tmpl->id }}" 
@@ -142,7 +142,7 @@
                             </div>
                         </div>
                         <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-relaxed">
-                            Template will be rendered with lead data instantly - no AI cost.
+                            Template langsung diisi dengan data lead - tanpa biaya AI.
                         </p>
                     </div>
                 </div>
@@ -153,10 +153,10 @@
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Save Changes</span>
+                    <span>Simpan Perubahan</span>
                 </button>
                 <a href="{{ route('campaigns.show', $campaign) }}" class="btn-secondary justify-center rounded-xl py-3 px-5">
-                    Cancel
+                    Batal
                 </a>
             </div>
         </div>
@@ -172,15 +172,15 @@
                                 <circle cx="12" cy="12" r="6"></circle>
                                 <circle cx="12" cy="12" r="2"></circle>
                             </svg>
-                            <span>Campaign Target Leads</span>
+                            <span>Target Lead Campaign</span>
                         </h3>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Adding leads generates AI copies. Removing leads purges templates.</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Lead yang ditambahkan akan dibuatkan pesan AI. Lead yang dilepas akan kehilangan draft yang belum terkirim.</p>
                     </div>
                     <button type="button" id="btn-ai-select" class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold rounded-lg hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border border-indigo-500/30">
                         <svg class="w-3.5 h-3.5 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 113.536 0V21h-3.536v-5.064z" />
                         </svg>
-                        <span>AI Smart Select</span>
+                        <span>Smart Select AI</span>
                     </button>
                 </div>
 
@@ -192,13 +192,13 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </span>
-                        <input type="text" id="lead-search-input" placeholder="Search leads by name, email, niche..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200">
+                        <input type="text" id="lead-search-input" placeholder="Cari lead berdasarkan nama, email, niche..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200">
                     </div>
                     
                     {{-- Searchable Niche Dropdown --}}
                     <div class="relative custom-combobox" id="combobox-niche">
                         <button type="button" class="combobox-trigger w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200 flex justify-between items-center cursor-pointer">
-                            <span class="combobox-label">All Niches</span>
+                            <span class="combobox-label">Semua Niche</span>
                             <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -210,10 +210,10 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                     </svg>
                                 </span>
-                                <input type="text" class="combobox-search w-full pl-7 pr-2.5 py-1 text-2xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200" placeholder="Search niche...">
+                                <input type="text" class="combobox-search w-full pl-7 pr-2.5 py-1 text-2xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200" placeholder="Cari niche...">
                             </div>
                             <div class="combobox-options max-h-40 overflow-y-auto space-y-1">
-                                <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" data-value="">All Niches</div>
+                                <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" data-value="">Semua Niche</div>
                                 @foreach($niches as $niche)
                                     <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" data-value="{{ strtolower($niche) }}">{{ ucfirst($niche) }}</div>
                                 @endforeach
@@ -224,7 +224,7 @@
                     {{-- Searchable City Dropdown --}}
                     <div class="relative custom-combobox" id="combobox-city">
                         <button type="button" class="combobox-trigger w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200 flex justify-between items-center cursor-pointer">
-                            <span class="combobox-label">All Cities</span>
+                            <span class="combobox-label">Semua Kota</span>
                             <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -236,10 +236,10 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                     </svg>
                                 </span>
-                                <input type="text" class="combobox-search w-full pl-7 pr-2.5 py-1 text-2xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200" placeholder="Search city...">
+                                <input type="text" class="combobox-search w-full pl-7 pr-2.5 py-1 text-2xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200" placeholder="Cari kota...">
                             </div>
                             <div class="combobox-options max-h-40 overflow-y-auto space-y-1">
-                                <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" data-value="">All Cities</div>
+                                <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" data-value="">Semua Kota</div>
                                 @foreach($cities as $city)
                                     <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" data-value="{{ strtolower($city) }}">{{ ucfirst($city) }}</div>
                                 @endforeach
@@ -251,30 +251,30 @@
                 {{-- Contact Info Presence Filters --}}
                 <div class="grid grid-cols-3 gap-2.5 mb-4 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800/60 z-20">
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Phone Status</label>
+                        <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Status Telepon</label>
                         <input type="hidden" id="filter-phone" value="">
                         <div class="grid grid-cols-3 gap-1">
-                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 bg-indigo-500/10 text-indigo-600" data-target="filter-phone" data-value="">All</button>
-                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-phone" data-value="yes">Has</button>
-                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-phone" data-value="no">None</button>
+                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 bg-indigo-500/10 text-indigo-600" data-target="filter-phone" data-value="">Semua</button>
+                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-phone" data-value="yes">Ada</button>
+                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-phone" data-value="no">Tidak</button>
                         </div>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Email Status</label>
+                        <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Status Email</label>
                         <input type="hidden" id="filter-email" value="">
                         <div class="grid grid-cols-3 gap-1">
-                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 bg-indigo-500/10 text-indigo-600" data-target="filter-email" data-value="">All</button>
-                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-email" data-value="yes">Has</button>
-                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-email" data-value="no">None</button>
+                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 bg-indigo-500/10 text-indigo-600" data-target="filter-email" data-value="">Semua</button>
+                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-email" data-value="yes">Ada</button>
+                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-email" data-value="no">Tidak</button>
                         </div>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Website Status</label>
+                        <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1">Status Website</label>
                         <input type="hidden" id="filter-website" value="">
                         <div class="grid grid-cols-3 gap-1">
-                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 bg-indigo-500/10 text-indigo-600" data-target="filter-website" data-value="">All</button>
-                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-website" data-value="yes">Has</button>
-                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-website" data-value="no">None</button>
+                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 bg-indigo-500/10 text-indigo-600" data-target="filter-website" data-value="">Semua</button>
+                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-website" data-value="yes">Ada</button>
+                            <button type="button" class="filter-toggle-btn px-2 py-1 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400" data-target="filter-website" data-value="no">Tidak</button>
                         </div>
                     </div>
                 </div>
@@ -282,7 +282,7 @@
                 {{-- AI Loader Indicator --}}
                 <div id="ai-loader" class="hidden py-10 flex flex-col items-center justify-center gap-3">
                     <div class="w-7 h-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Fetching targets...</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Memuat target...</p>
                 </div>
 
                 {{-- Leads List Container --}}
@@ -290,16 +290,16 @@
                     <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700/50">
                         <label class="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
                             <input type="checkbox" id="select-all-leads" class="form-checkbox rounded cursor-pointer">
-                            <span>Select All Leads on Page</span>
+                            <span>Pilih Semua Lead di Halaman Ini</span>
                         </label>
-                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold"><span id="selected-count">0</span> selected</span>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold"><span id="selected-count">0</span> dipilih</span>
                     </div>
 
                     <div id="no-filtered-leads" class="hidden py-8 text-center text-slate-400 dark:text-slate-500">
                         <svg class="w-8 h-8 mx-auto mb-2 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <p class="text-xs">No matching leads found</p>
+                        <p class="text-xs">Tidak ada lead yang cocok</p>
                     </div>
 
                     <div id="leads-list-body" class="space-y-2.5">
@@ -310,7 +310,7 @@
                 {{-- Pagination Controls --}}
                 <div id="leads-pagination" class="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/60 shrink-0">
                     <span class="text-[11px] text-slate-500 dark:text-slate-400">
-                        Showing <span id="pagination-showing-start">0</span>-<span id="pagination-showing-end">0</span> of <span id="pagination-total">0</span> leads
+                        Menampilkan <span id="pagination-showing-start">0</span>-<span id="pagination-showing-end">0</span> dari <span id="pagination-total">0</span> lead
                     </span>
                     <div class="flex items-center gap-1.5">
                         <button type="button" id="btn-prev-page" class="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
@@ -318,7 +318,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 px-2" id="pagination-current-page">Page 1 of 1</span>
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 px-2" id="pagination-current-page">Halaman 1 dari 1</span>
                         <button type="button" id="btn-next-page" class="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
@@ -367,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const channelCheckboxes = document.querySelectorAll('.channel-checkbox');
 
     // Initialize Template SearchableCombobox
-    const cbTemplate = new SearchableCombobox('template-selector-group', '- Choose a template -');
+    const cbTemplate = new SearchableCombobox('template-selector-group', '- Pilih template -');
 
     // Update initial selected count
     updateSelectedCount();
@@ -454,9 +454,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 label.textContent = placeholder;
             } else if (selectedValues.size === 1) {
                 const only = options.find(opt => selectedValues.has(opt.getAttribute('data-value')));
-                label.textContent = only ? only.textContent.trim() : `${selectedValues.size} selected`;
+                label.textContent = only ? only.textContent.trim() : `${selectedValues.size} dipilih`;
             } else {
-                label.textContent = `${selectedValues.size} selected`;
+                label.textContent = `${selectedValues.size} dipilih`;
             }
         }
 
@@ -520,12 +520,12 @@ document.addEventListener('DOMContentLoaded', function() {
         updateLabel();
     }
 
-    initMultiSelectCombobox('combobox-niche', 'All Niches', function(values) {
+    initMultiSelectCombobox('combobox-niche', 'Semua Niche', function(values) {
         selectedNiches = values;
         fetchLeads(1);
     });
 
-    initMultiSelectCombobox('combobox-city', 'All Cities', function(values) {
+    initMultiSelectCombobox('combobox-city', 'Semua Kota', function(values) {
         selectedCities = values;
         fetchLeads(1);
     });
@@ -594,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error fetching leads:', error);
-            window.showToast('Failed to load leads from database', 'error');
+            window.showToast('Gagal memuat lead dari database', 'error');
         } finally {
             aiLoader.classList.add('hidden');
             leadsListContainer.classList.remove('opacity-40');
@@ -621,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (lead.email) {
                 contactInfo += `<span class="truncate">Email: ${lead.email}</span>`;
             } else if (lead.phone) {
-                contactInfo += `<span class="truncate">Phone: ${lead.phone}</span>`;
+                contactInfo += `<span class="truncate">Telepon: ${lead.phone}</span>`;
             }
 
             row.innerHTML = `
@@ -682,7 +682,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showingStart.textContent = start;
         showingEnd.textContent = end;
         totalSpan.textContent = total;
-        currentPageSpan.textContent = `Page ${currentPageVal} of ${lastPage}`;
+        currentPageSpan.textContent = `Halaman ${currentPageVal} dari ${lastPage}`;
 
         btnPrev.disabled = currentPageVal <= 1;
         btnNext.disabled = currentPageVal >= lastPage;
@@ -769,7 +769,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (selectedLeadIds.size === 0) {
             e.preventDefault();
-            window.showToast('Please select at least 1 lead for this campaign!', 'error');
+            window.showToast('Pilih minimal 1 lead untuk campaign ini.', 'error');
             return;
         }
 
@@ -794,7 +794,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const locationVal = inputLocation.value.trim();
 
             if (!nicheVal && !locationVal) {
-                window.showToast('Please fill in Target Niche or Target Location first so AI can match leads!', 'error');
+                window.showToast('Isi Target Niche atau Target Lokasi dulu agar AI bisa mencocokkan lead.', 'error');
                 return;
             }
 
@@ -831,14 +831,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetchLeads(currentPage);
 
                 if (matchedIds.length > 0) {
-                    window.showToast(`AI matched and selected ${matchedIds.length} relevant leads!`, 'success');
+                    window.showToast(`AI menemukan dan memilih ${matchedIds.length} lead yang relevan.`, 'success');
                 } else {
-                    window.showToast('AI could not find close matches. You can still select leads manually.', 'error');
+                    window.showToast('AI tidak menemukan lead yang cocok. Anda tetap bisa memilih lead secara manual.', 'error');
                 }
 
             } catch (error) {
                 console.error('AI Selection error:', error);
-                window.showToast('An error occurred during AI matching. Please select leads manually.', 'error');
+                window.showToast('Terjadi kesalahan saat pencocokan AI. Silakan pilih lead secara manual.', 'error');
             } finally {
                 aiLoader.classList.add('hidden');
                 leadsListContainer.classList.remove('opacity-40');

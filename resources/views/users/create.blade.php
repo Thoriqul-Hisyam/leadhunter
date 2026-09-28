@@ -76,7 +76,7 @@
 
             {{-- Assign Roles --}}
             <div>
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-3">Roles</label>
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-3">Role</label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     @foreach($roles as $role)
                         <label class="flex items-start p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-850 rounded-2xl hover:border-indigo-500/60 dark:hover:border-indigo-500/60 transition cursor-pointer select-none relative group">

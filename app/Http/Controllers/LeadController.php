@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\CrawlException;
+use App\Helpers\LeadSelection;
 use App\Helpers\Url;
+use App\Jobs\EnrichLeadJob;
 use App\Jobs\ScrapeGoogleMapsJob;
 use App\Models\Campaign;
 use App\Models\Lead;
@@ -11,6 +13,7 @@ use App\Models\LeadNote;
 use App\Models\ScrapingNotification;
 use App\Services\WebsiteCrawlerService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -18,14 +21,18 @@ class LeadController extends Controller
 {
     public function index(Request $request)
     {
-        $filters = $request->only(['search', 'no_website', 'has_email', 'has_phone', 'has_website', 'stage']);
+        $filters = $request->only(LeadSelection::FILTERS);
+        $sort = $request->query('sort') === 'score' ? 'score' : 'latest';
 
-        $leads = Lead::query()->filter($filters)->latest()->paginate(20)->withQueryString();
+        $query = Lead::query()->filter($filters);
+        $sort === 'score' ? $query->orderByDesc('score')->orderByDesc('id') : $query->latest();
+
+        $leads = $query->paginate(20)->withQueryString();
         $pendingScrapes = $this->pendingScrapes();
         $campaigns = Campaign::all();
         $stages = Lead::STAGES;
 
-        return view('leads.index', compact('leads', 'pendingScrapes', 'campaigns', 'stages', 'filters'));
+        return view('leads.index', compact('leads', 'pendingScrapes', 'campaigns', 'stages', 'filters', 'sort'));
     }
 
     public function show(Lead $lead)
@@ -86,6 +93,59 @@ class LeadController extends Controller
         return redirect()->route('leads.show', $lead)->with('success', 'Catatan dihapus.');
     }
 
+    /**
+     * Aksi massal dari tabel Leads: cari email dari website, audit website, atau ubah stage.
+     * Crawl & audit berjalan di background sebagai satu batch; notifikasi muncul saat selesai.
+     */
+    public function bulk(Request $request)
+    {
+        $request->validate([
+            'action' => 'required|in:crawl,audit,stage',
+            'pipeline_stage' => ['required_if:action,stage', 'nullable', Rule::in(array_keys(Lead::STAGES))],
+        ]);
+
+        $ids = LeadSelection::ids($request);
+
+        if (! $ids) {
+            return redirect()->back()->with('error', 'Pilih minimal satu lead.');
+        }
+
+        if ($request->action === 'stage') {
+            Lead::whereIn('id', $ids)->get()->each->update(['pipeline_stage' => $request->pipeline_stage]);
+
+            return redirect()->back()->with('success', count($ids).' lead dipindah ke stage '.Lead::STAGES[$request->pipeline_stage].'.');
+        }
+
+        $query = Lead::whereIn('id', $ids)->whereNotNull('website')->where('website', '!=', '');
+        if ($request->action === 'crawl') {
+            // Hanya lead yang masih kekurangan email atau telepon
+            $query->where(fn ($q) => $q->whereNull('email')->orWhere('email', '')->orWhereNull('phone')->orWhere('phone', ''));
+        }
+
+        $targets = $query->pluck('id');
+
+        if ($targets->isEmpty()) {
+            return redirect()->back()->with('error', $request->action === 'crawl'
+                ? 'Tidak ada lead terpilih yang punya website dan masih kekurangan email/telepon.'
+                : 'Tidak ada lead terpilih yang punya website.');
+        }
+
+        $action = $request->action;
+        $label = $action === 'crawl' ? 'Cari email dari website' : 'Audit website';
+        $total = $targets->count();
+
+        Bus::batch($targets->map(fn ($id) => new EnrichLeadJob($id, $action))->all())
+            ->name($label)
+            ->allowFailures()
+            ->finally(function () use ($label, $total) {
+                ScrapingNotification::notify('success', "{$label} selesai", "{$label} untuk {$total} lead selesai diproses. Muat ulang halaman Leads untuk melihat hasilnya.");
+            })
+            ->onQueue($action === 'crawl' ? 'scraping' : 'default')
+            ->dispatch();
+
+        return redirect()->back()->with('success', "{$label} dijalankan di background untuk {$total} lead. Notifikasi muncul di ikon lonceng saat selesai.");
+    }
+
     public function scrape(Request $request)
     {
         $request->validate([
@@ -101,7 +161,7 @@ class LeadController extends Controller
             $request->location
         );
 
-        ScrapeGoogleMapsJob::dispatch($request->niche, $request->location);
+        ScrapeGoogleMapsJob::dispatch($request->niche, $request->location, $request->user()->id);
 
         return redirect()->route('leads.index')->with('success', 'Scraping dimulai di background. Proses ini bisa memakan beberapa menit; notifikasi akan muncul di ikon lonceng saat selesai.');
     }

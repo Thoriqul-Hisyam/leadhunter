@@ -34,7 +34,7 @@ class LeadScraperService
      *
      * @throws ScrapeFailedException
      */
-    public function scrape(string $niche, string $location): array
+    public function scrape(string $niche, string $location, ?int $createdBy = null): array
     {
         $source = $this->source();
         $stats = ['found' => 0, 'created' => 0, 'updated' => 0, 'unchanged' => 0, 'skipped' => 0];
@@ -44,9 +44,9 @@ class LeadScraperService
             $source->search(
                 trim($niche).' '.trim($location),
                 (int) config('leadhunter.scraper.max_results', 100),
-                function (array $place) use ($niche, $location, $source, &$stats, &$needsEmail) {
+                function (array $place) use ($niche, $location, $source, $createdBy, &$stats, &$needsEmail) {
                     $stats['found']++;
-                    [$outcome, $lead] = $this->saveLead($place, $niche, $location, $source->name());
+                    [$outcome, $lead] = $this->saveLead($place, $niche, $location, $source->name(), $createdBy);
                     $stats[$outcome]++;
 
                     if ($lead && $lead->website && ! $lead->email) {
@@ -69,7 +69,7 @@ class LeadScraperService
     /**
      * @return array{0: string, 1: ?Lead} outcome: created|updated|unchanged|skipped
      */
-    public function saveLead(array $place, string $niche, string $location, string $source): array
+    public function saveLead(array $place, string $niche, string $location, string $source, ?int $createdBy = null): array
     {
         $name = trim(preg_replace('/[\x{E000}-\x{F8FF}]/u', '', (string) ($place['name'] ?? '')));
 
@@ -95,13 +95,21 @@ class LeadScraperService
             'source' => $source,
         ];
 
-        $lead = Lead::where('business_name', $name)->where('city', $city)->first();
+        $placeId = (($place['place_id'] ?? null) ?: null) ?? Lead::placeIdFromUrl($data['google_maps_url']);
+        $data['place_id'] = $placeId;
+
+        // Cocokkan per tempat Google Maps: cabang dengan nama sama di kota yang sama tetap lead terpisah.
+        // Lead lama/manual yang belum punya place_id dicocokkan lewat nama + kota.
+        $lead = $placeId ? Lead::where('place_id', $placeId)->first() : null;
+        $lead ??= Lead::where('business_name', $name)->where('city', $city)
+            ->when($placeId, fn ($q) => $q->whereNull('place_id'))
+            ->first();
 
         if (! $lead) {
             try {
-                return ['created', Lead::create(['business_name' => $name, 'city' => $city] + $data)];
+                return ['created', Lead::create(['business_name' => $name, 'city' => $city, 'created_by' => $createdBy] + $data)];
             } catch (UniqueConstraintViolationException) {
-                return ['unchanged', Lead::where('business_name', $name)->where('city', $city)->first()];
+                return ['unchanged', $placeId ? Lead::where('place_id', $placeId)->first() : null];
             }
         }
 

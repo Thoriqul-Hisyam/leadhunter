@@ -91,7 +91,7 @@
     <nav id="main-navbar" class="w-full sticky top-0 z-50 transition-all duration-300">
         <div class="max-w-400 mx-auto px-4 md:px-6 py-3 flex items-center gap-3">
             {{-- Logo --}}
-            <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 shrink-0 group" title="Sandesa Dashboard">
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 shrink-0 group" title="Dashboard Sandesa">
                 <svg class="w-8 h-8 transition-transform duration-200 group-hover:scale-105 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 268">
                     <defs>
                         <linearGradient id="sandesaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -177,6 +177,7 @@
                             <div class="py-1">
                                 @can('manage_settings')
                                     <a href="{{ route('settings.edit') }}" class="user-menu-link"><x-icon name="cog" class="w-4 h-4" /> Pengaturan & Blacklist</a>
+                                    <a href="{{ route('queue.index') }}" class="user-menu-link"><x-icon name="clock" class="w-4 h-4" /> Antrean & Worker</a>
                                 @endcan
                                 @can('manage_users')
                                     <a href="{{ route('users.index') }}" class="user-menu-link"><x-icon name="user" class="w-4 h-4" /> Kelola Pengguna</a>
@@ -226,6 +227,18 @@
 
     {{-- Main Content --}}
     <main class="flex-1 w-full max-w-400 mx-auto p-4 md:p-6 lg:p-8 pt-2">
+        @auth
+            @php $systemProblems = \App\Services\SystemHealth::problems(); @endphp
+            @if($systemProblems)
+                <div class="mb-5 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-xs text-amber-800 dark:text-amber-300">
+                    <x-icon name="warning" class="w-4 h-4 shrink-0" />
+                    <span class="flex-1"><strong>{{ implode(', ', $systemProblems) }}</strong> tidak berjalan. Scraping, generate AI, dan pengiriman antrean tidak akan diproses. Jalankan <code>composer run dev</code>.</span>
+                    @can('manage_settings')
+                        <a href="{{ route('queue.index') }}" class="font-bold underline whitespace-nowrap">Lihat status</a>
+                    @endcan
+                </div>
+            @endif
+        @endauth
         @yield('content')
     </main>
 
@@ -269,7 +282,7 @@
                 this.dropdown = this.container.querySelector('.combobox-dropdown');
                 this.search = this.container.querySelector('.combobox-search');
                 this.optionsContainer = this.container.querySelector('.combobox-options');
-                this.placeholder = placeholder || 'Select option';
+                this.placeholder = placeholder || 'Pilih opsi';
                 this.onSelect = onSelect;
                 this.value = this.hiddenInput ? this.hiddenInput.value : '';
                 
@@ -760,9 +773,9 @@
         };
 
         function openGlobalConfirmModal(title, message, btnText) {
-            document.getElementById('globalConfirmModalTitle').innerText = title || 'Are you sure?';
-            document.getElementById('globalConfirmModalMessage').innerText = message || 'This action cannot be undone.';
-            document.getElementById('globalConfirmModalBtn').innerText = btnText || 'Yes';
+            document.getElementById('globalConfirmModalTitle').innerText = title || 'Anda yakin?';
+            document.getElementById('globalConfirmModalMessage').innerText = message || 'Tindakan ini tidak dapat dibatalkan.';
+            document.getElementById('globalConfirmModalBtn').innerText = btnText || 'Ya';
             
             const modal = document.getElementById('globalConfirmModal');
             const content = document.getElementById('globalConfirmModalContent');
@@ -817,13 +830,13 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2" id="globalConfirmModalTitle">Are you sure?</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6" id="globalConfirmModalMessage">This action cannot be undone.</p>
-            
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2" id="globalConfirmModalTitle">Anda yakin?</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6" id="globalConfirmModalMessage">Tindakan ini tidak dapat dibatalkan.</p>
+
             <div class="flex justify-center gap-3">
-                <button type="button" onclick="closeGlobalConfirmModal()" class="btn-secondary px-6">Cancel</button>
+                <button type="button" onclick="closeGlobalConfirmModal()" class="btn-secondary px-6">Batal</button>
                 <button type="button" id="globalConfirmModalBtn" class="btn-primary shadow-lg shadow-indigo-500/25 px-6 font-bold">
-                    Yes
+                    Ya
                 </button>
             </div>
         </div>

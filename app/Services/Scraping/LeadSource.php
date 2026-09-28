@@ -17,7 +17,7 @@ interface LeadSource
     /**
      * Cari bisnis dan panggil $onPlace untuk setiap hasil, segera setelah ditemukan.
      *
-     * Format $place: name, address, phone, website, email, category, rating, reviews_count, google_maps_url
+     * Format $place: name, address, phone, website, email, category, rating, reviews_count, google_maps_url, place_id
      * (semua kecuali name boleh null).
      *
      * @param  callable(array $place): void  $onPlace

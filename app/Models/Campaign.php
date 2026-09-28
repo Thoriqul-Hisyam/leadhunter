@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RecordsCreator;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class Campaign extends Model
 {
-    use HasFactory;
+    use HasFactory, RecordsCreator;
 
     protected $guarded = [];
 
@@ -21,6 +22,11 @@ class Campaign extends Model
     public function outreachMessages()
     {
         return $this->hasMany(OutreachMessage::class);
+    }
+
+    public function steps()
+    {
+        return $this->hasMany(CampaignStep::class)->orderBy('step');
     }
 
     public function isGenerating(): bool

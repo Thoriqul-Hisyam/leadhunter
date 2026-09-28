@@ -9,6 +9,7 @@ use App\Models\MessageTemplate;
 use App\Models\OutreachMessage;
 use App\Models\ScrapingNotification;
 use App\Services\AiService;
+use App\Services\MessageQualityGate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -77,6 +78,7 @@ class GenerateOutreachJob implements ShouldQueue
                         : ($this->channel === 'email' ? $ai->defaultSubject($lead) : null),
                     'message' => $ai->polishDraft($lead, $draft, $this->context + ['tone' => $template->tone, 'language' => $template->language]),
                 ];
+                $result['needs_review'] = app(MessageQualityGate::class)->problems($result['message'], $result['subject'], $lead, $this->channel) !== [];
                 $mode = 'hybrid';
             } else {
                 $result = $ai->generateOutreach($lead, $this->channel, $this->context);
@@ -102,6 +104,9 @@ class GenerateOutreachJob implements ShouldQueue
             'status' => 'pending',
             'mode' => $mode,
             'template_id' => $template?->id,
+            'needs_review' => $result['needs_review'] ?? false,
+            'prompt_variant' => $result['variant'] ?? null,
+            'created_by' => $campaign->created_by,
         ]);
 
         $this->finish($campaign, true);

@@ -69,12 +69,12 @@ class RoleAndAdminSeeder extends Seeder
             [
                 'name' => 'Administrator',
                 'slug' => 'admin',
-                'description' => 'Full access to system features, role configurations, and user accounts management',
+                'description' => 'Akses penuh ke semua fitur, pengaturan, role, dan manajemen akun pengguna',
             ],
             [
                 'name' => 'User',
                 'slug' => 'user',
-                'description' => 'Standard access to lead scraping, email campaign pipelines, template builders, and outreach generators',
+                'description' => 'Akses standar: scraping lead, campaign, template, dan pembuatan serta pengiriman outreach',
             ],
         ];
 

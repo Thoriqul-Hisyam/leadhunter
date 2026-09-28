@@ -13,24 +13,24 @@
             </svg>
         </div>
         <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Hunt New Leads</h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">Scrape businesses from Google Maps</p>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Cari Lead Baru</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Scrape bisnis dari Google Maps</p>
         </div>
     </div>
 
     <form action="{{ route('leads.scrape') }}" method="POST" class="flex flex-col md:flex-row gap-4 items-end">
         @csrf
         <div class="flex-1 w-full">
-            <label for="niche" class="form-label">Niche / Keyword</label>
-            <input type="text" name="niche" id="niche" placeholder="e.g. klinik gigi, cafe, agency" required class="form-input">
+            <label for="niche" class="form-label">Niche / Kata Kunci</label>
+            <input type="text" name="niche" id="niche" placeholder="mis. klinik gigi, cafe, agency" required class="form-input">
         </div>
         <div class="flex-1 w-full">
-            <label for="location" class="form-label">Location</label>
-            <input type="text" name="location" id="location" placeholder="e.g. Surabaya, Jakarta, Bali" required class="form-input">
+            <label for="location" class="form-label">Lokasi</label>
+            <input type="text" name="location" id="location" placeholder="mis. Surabaya, Jakarta, Bali" required class="form-input">
         </div>
         <div class="w-full md:w-auto">
             <button type="submit" class="btn-pink w-full justify-center">
-                <span>Scrape Leads</span>
+                <span>Scrape Lead</span>
             </button>
         </div>
     </form>
@@ -64,12 +64,12 @@
                     <div class="absolute text-indigo-500"><x-icon name="signal" class="w-3.5 h-3.5" /></div>
                 </div>
                 <div>
-                    <h4 class="font-bold text-sm text-slate-900 dark:text-white">Scraping in progress...</h4>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Fetching real-time leads from Google Maps in the background. You will receive a notification at the top-right bell icon when complete.</p>
+                    <h4 class="font-bold text-sm text-slate-900 dark:text-white">Scraping sedang berjalan...</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Mengambil lead dari Google Maps di latar belakang. Notifikasi akan muncul di ikon lonceng kanan atas setelah selesai.</p>
                 </div>
             </div>
             <span class="text-[11px] font-bold px-3 py-1 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
-                {{ $pendingScrapes }} active job(s)
+                {{ $pendingScrapes }} job aktif
             </span>
         </div>
     @endif
@@ -83,14 +83,14 @@
                 </svg>
             </div>
             <div class="flex items-center gap-2.5">
-                <h3 class="text-base font-bold text-slate-900 dark:text-white">All Leads</h3>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white">Semua Lead</h3>
                 <button type="button" 
                         onclick="openCreateModal()" 
                         class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] transition shadow-xs flex items-center gap-1 cursor-pointer border-0 outline-none">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
-                    <span>Add Lead</span>
+                    <span>Tambah Lead</span>
                 </button>
             </div>
         </div>
@@ -138,6 +138,12 @@
                 <option value="{{ $value }}" @selected(request('stage') === $value)>{{ $label }}</option>
             @endforeach
         </select>
+        <select name="min_score" onchange="this.form.submit()" class="form-input text-xs lg:w-auto" aria-label="Filter skor">
+            <option value="">Skor: semua</option>
+            <option value="70" @selected(request('min_score') == 70)>Hot (skor ≥ 70)</option>
+            <option value="50" @selected(request('min_score') == 50)>Skor ≥ 50</option>
+        </select>
+        <input type="hidden" name="sort" value="{{ $sort === 'score' ? 'score' : '' }}">
         <button type="submit" class="btn-secondary py-1.5 px-4 text-xs">Filter</button>
         @if(array_filter($filters))
             <a href="{{ route('leads.index') }}" class="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white px-2">Reset</a>
@@ -154,8 +160,8 @@
                 </svg>
             </div>
             <div>
-                <h4 class="font-bold text-sm text-white"><span id="selected-count">0</span> Leads Selected</h4>
-                <p class="text-[10px] text-indigo-100 mt-0.5">Select campaign and channel to generate bulk outreach</p>
+                <h4 class="font-bold text-sm text-white"><span id="selected-count">0</span> Lead Dipilih</h4>
+                <p class="text-[10px] text-indigo-100 mt-0.5">Pilih campaign dan channel untuk generate outreach massal</p>
             </div>
         </div>
         <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
@@ -173,16 +179,39 @@
                 :options="['email' => 'Email', 'whatsapp' => 'WhatsApp']"
                 triggerClass="!bg-white/10 !text-white !border-white/20 focus:!bg-indigo-900/50 focus:!text-white !rounded-xl text-xs font-semibold h-[38px] min-w-[120px] [&_span]:truncate [&_svg]:!text-white/80" />
             <button type="submit" form="bulk-outreach-form" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-white text-indigo-700 font-bold text-xs hover:bg-slate-50 transition shadow-md flex items-center justify-center gap-1.5">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.683 5.682a8.205 8.205 0 11-11.64 0c.37-.362.84-.62 1.348-.753l1.16-.3a.75.75 0 01.916.518l.3 1.16a2.205 2.205 0 003.536 0l.3-1.16a.75.75 0 01.916-.518l1.16.3c.508.133.978.391 1.348.753z" />
-                </svg>
+                <x-icon name="sparkles" class="w-3.5 h-3.5" />
                 <span>Generate</span>
             </button>
         </div>
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto md:border-l md:border-white/20 md:pl-4">
+            <button type="button" onclick="submitLeadBulk('crawl')" class="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1.5 transition" title="Buka website setiap lead untuk mencari email & telepon yang belum ada">
+                <x-icon name="envelope" class="w-3.5 h-3.5" /> Cari email
+            </button>
+            <button type="button" onclick="submitLeadBulk('audit')" class="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1.5 transition" title="Cek kecepatan mobile & HTTPS website lead (Google PageSpeed)">
+                <x-icon name="signal" class="w-3.5 h-3.5" /> Audit website
+            </button>
+            <select id="bulk-stage-select" onchange="if (this.value) submitLeadBulk('stage', this.value)" class="px-2 py-2 rounded-lg bg-white/15 text-white font-bold text-xs border border-white/20 [&>option]:text-slate-800" aria-label="Pindahkan stage lead terpilih">
+                <option value="">Pindah stage...</option>
+                @foreach($stages as $value => $label)
+                    <option value="{{ $value }}">{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+
+    {{-- Pilih semua hasil filter (lintas halaman) --}}
+    <div id="select-all-banner" class="hidden mb-4 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-700 dark:text-indigo-300 flex flex-wrap items-center gap-2">
+        <span id="select-all-text"></span>
+        <button type="button" id="select-all-filter-btn" class="font-bold underline">Pilih semua {{ number_format($leads->total()) }} lead hasil filter</button>
     </div>
 
     <form action="{{ route('outreach.generate') }}" method="POST" id="bulk-outreach-form">
         @csrf
+        <div class="select-all-fields"></div>
+    </form>
+    <form action="{{ route('leads.bulk') }}" method="POST" id="leads-bulk-form" class="hidden">
+        @csrf
+        <div class="select-all-fields"></div>
     </form>
     <div class="overflow-x-auto">
             <table class="fancy-table">
@@ -191,12 +220,17 @@
                         <th style="width: 45px; padding-left: 16px;">
                             <input type="checkbox" id="select-all-leads" class="form-checkbox h-4.5 w-4.5 rounded text-indigo-600 border-slate-300 cursor-pointer">
                         </th>
-                        <th>Business Name</th>
-                        <th>Niche / City</th>
-                        <th>Contact</th>
+                        <th>Nama Bisnis</th>
+                        <th>Niche / Kota</th>
+                        <th>Kontak</th>
                         <th>Rating</th>
                         <th>Stage</th>
-                        <th style="width: 120px; text-align: right; padding-right: 20px;">Actions</th>
+                        <th>
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => $sort === 'score' ? null : 'score', 'page' => null]) }}" class="inline-flex items-center gap-1 hover:text-indigo-600" title="Urutkan berdasarkan skor prioritas">
+                                Skor <x-icon name="chevron-down" class="w-3 h-3 {{ $sort === 'score' ? 'text-indigo-600' : 'opacity-40' }}" />
+                            </a>
+                        </th>
+                        <th style="width: 120px; text-align: right; padding-right: 20px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -251,7 +285,7 @@
                                     </a>
                                 @endif
                                 @if(!$lead->email && !$lead->phone && !$lead->website)
-                                    <span class="text-slate-400 dark:text-slate-600 text-xs no-contact-label">No contact info</span>
+                                    <span class="text-slate-400 dark:text-slate-600 text-xs no-contact-label">Belum ada kontak</span>
                                 @endif
                             </div>
                         </td>
@@ -269,6 +303,9 @@
                         <td>
                             @include('leads.partials.stage-badge', ['stage' => $lead->pipeline_stage])
                         </td>
+                        <td>
+                            @include('leads.partials.score-badge', ['lead' => $lead])
+                        </td>
                         <td style="text-align: right; padding-right: 20px;">
                             <div class="flex items-center justify-end gap-1.5">
                                 {{-- Details (Read) Button --}}
@@ -283,9 +320,9 @@
                                         data-address="{{ $lead->address }}"
                                         data-city="{{ $lead->city }}"
                                         data-source="{{ $lead->source }}"
-                                        data-created-at="{{ $lead->created_at->format('M d, Y \a\t H:i') }}"
+                                        data-created-at="{{ $lead->created_at->translatedFormat('d M Y, H:i') }}"
                                         class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-white transition shadow-2xs cursor-pointer border-0 outline-none flex items-center justify-center shrink-0"
-                                        title="View Details">
+                                        title="Lihat Detail">
                                     <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -316,7 +353,7 @@
                                     <button type="button" 
                                             onclick="crawlLeadWebsite(this, '{{ $lead->id }}')"
                                             class="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 hover:text-white transition shadow-2xs cursor-pointer border-0 outline-none flex items-center justify-center shrink-0 crawl-btn"
-                                            title="Extract missing info from website">
+                                            title="Cari kontak yang belum ada dari website">
                                         <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                                         </svg>
@@ -324,12 +361,12 @@
                                 @endif
                                 
                                 {{-- Delete Button --}}
-                                <form action="{{ route('leads.destroy', $lead) }}" method="POST" onsubmit="return handleConfirm(event, this, 'Delete Lead?', 'Are you sure you want to delete this lead? All associated outreach messages will also be permanently deleted.', 'Yes, Delete')" class="inline shrink-0">
+                                <form action="{{ route('leads.destroy', $lead) }}" method="POST" onsubmit="return handleConfirm(event, this, 'Hapus Lead?', 'Yakin ingin menghapus lead ini? Semua pesan outreach terkait juga akan dihapus permanen.', 'Ya, Hapus')" class="inline shrink-0">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" 
                                             class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-600 hover:text-white transition shadow-2xs cursor-pointer border-0 outline-none flex items-center justify-center"
-                                            title="Delete Lead">
+                                            title="Hapus Lead">
                                         <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
@@ -340,15 +377,15 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state py-12">
                                 <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                                     <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                     </svg>
                                 </div>
-                                <p class="font-semibold text-slate-500 dark:text-slate-400">No leads yet</p>
-                                <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Use the form above to start scraping!</p>
+                                <p class="font-semibold text-slate-500 dark:text-slate-400">Belum ada lead</p>
+                                <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Gunakan form di atas untuk mulai scraping.</p>
                             </div>
                         </td>
                     </tr>
@@ -372,7 +409,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                <span>Lead Profile Details</span>
+                <span>Detail Profil Lead</span>
             </h3>
             <button type="button" onclick="closeViewModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white transition p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -386,11 +423,11 @@
                     LH
                 </div>
                 <div class="overflow-hidden">
-                    <h4 class="text-base font-extrabold text-slate-900 dark:text-white truncate" id="view-business-name">Business Name</h4>
+                    <h4 class="text-base font-extrabold text-slate-900 dark:text-white truncate" id="view-business-name">Nama Bisnis</h4>
                     <div class="flex flex-wrap gap-1.5 mt-2">
                         <span class="badge bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/15 text-[10px]" id="view-niche">Niche</span>
-                        <span class="badge bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15 text-[10px]" id="view-city">City</span>
-                        <span class="badge bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/15 text-[10px] uppercase" id="view-source">Source</span>
+                        <span class="badge bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15 text-[10px]" id="view-city">Kota</span>
+                        <span class="badge bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/15 text-[10px] uppercase" id="view-source">Sumber</span>
                     </div>
                 </div>
             </div>
@@ -404,8 +441,8 @@
                         </svg>
                     </div>
                     <div class="overflow-hidden min-w-0">
-                        <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Email Address</span>
-                        <a href="" id="view-email-link" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block">Not Available</a>
+                        <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Alamat Email</span>
+                        <a href="" id="view-email-link" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block">Tidak tersedia</a>
                     </div>
                 </div>
 
@@ -417,8 +454,8 @@
                         </svg>
                     </div>
                     <div class="overflow-hidden min-w-0">
-                        <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Phone Number</span>
-                        <a href="" id="view-phone-link" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block">Not Available</a>
+                        <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Nomor Telepon</span>
+                        <a href="" id="view-phone-link" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block">Tidak tersedia</a>
                     </div>
                 </div>
 
@@ -430,8 +467,8 @@
                         </svg>
                     </div>
                     <div class="overflow-hidden min-w-0">
-                        <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Website URL</span>
-                        <a href="" target="_blank" id="view-website-link" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block">Not Available</a>
+                        <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">URL Website</span>
+                        <a href="" target="_blank" id="view-website-link" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block">Tidak tersedia</a>
                     </div>
                 </div>
 
@@ -443,20 +480,20 @@
                         </svg>
                     </div>
                     <div class="overflow-hidden min-w-0">
-                        <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Discovery Date</span>
-                        <span id="view-created-at" class="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate block">Date</span>
+                        <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Tanggal Ditemukan</span>
+                        <span id="view-created-at" class="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate block">Tanggal</span>
                     </div>
                 </div>
             </div>
 
             {{-- Address Field --}}
             <div class="mb-6 p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-1">Full Address</span>
-                <p id="view-address" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-semibold">Full Address Here...</p>
+                <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-1">Alamat Lengkap</span>
+                <p id="view-address" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-semibold">Alamat lengkap...</p>
             </div>
 
             <div class="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
-                <button type="button" onclick="closeViewModal()" class="btn-secondary px-6 py-2.5 text-xs font-bold">Close</button>
+                <button type="button" onclick="closeViewModal()" class="btn-secondary px-6 py-2.5 text-xs font-bold">Tutup</button>
             </div>
         </div>
     </div>
@@ -471,7 +508,7 @@
                 <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-                <span>Add New Lead</span>
+                <span>Tambah Lead Baru</span>
             </h3>
             <button type="button" onclick="closeCreateModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white transition p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -485,58 +522,58 @@
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label for="create-business-name" class="form-label text-[10px]">Business Name</label>
-                        <input type="text" name="business_name" id="create-business-name" placeholder="e.g. Acme Corporation" required class="form-input text-xs">
+                        <label for="create-business-name" class="form-label text-[10px]">Nama Bisnis</label>
+                        <input type="text" name="business_name" id="create-business-name" placeholder="mis. Acme Corporation" required class="form-input text-xs">
                     </div>
                     <div>
                         <label for="create-niche" class="form-label text-[10px]">Niche</label>
-                        <input type="text" name="niche" id="create-niche" placeholder="e.g. Digital Agency, Klinik Gigi" required class="form-input text-xs">
+                        <input type="text" name="niche" id="create-niche" placeholder="mis. Digital Agency, Klinik Gigi" required class="form-input text-xs">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label for="create-city" class="form-label text-[10px]">City</label>
-                        <input type="text" name="city" id="create-city" placeholder="e.g. Surabaya" required class="form-input text-xs">
+                        <label for="create-city" class="form-label text-[10px]">Kota</label>
+                        <input type="text" name="city" id="create-city" placeholder="mis. Surabaya" required class="form-input text-xs">
                     </div>
                     <div>
-                        <label class="form-label text-[10px]">Source Channel</label>
+                        <label class="form-label text-[10px]">Sumber</label>
                         <x-searchable-select name="source" 
                             id="create-source" 
                             required="true" 
                             selected="custom"
-                            :options="['custom' => 'Custom Import', 'google-maps' => 'Google Maps', 'website' => 'Website']"
+                            :options="['custom' => 'Input Manual', 'google-maps' => 'Google Maps', 'website' => 'Website']"
                             triggerClass="text-xs !py-2 !rounded-lg" />
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                     <div class="sm:col-span-1">
-                        <label for="create-phone" class="form-label text-[10px]">Phone Number</label>
-                        <input type="text" name="phone" id="create-phone" placeholder="e.g. +62812345678" class="form-input text-xs">
+                        <label for="create-phone" class="form-label text-[10px]">Nomor Telepon</label>
+                        <input type="text" name="phone" id="create-phone" placeholder="mis. +62812345678" class="form-input text-xs">
                     </div>
                     <div class="sm:col-span-1">
-                        <label for="create-email" class="form-label text-[10px]">Email Address</label>
-                        <input type="email" name="email" id="create-email" placeholder="e.g. hello@acme.com" class="form-input text-xs">
+                        <label for="create-email" class="form-label text-[10px]">Alamat Email</label>
+                        <input type="email" name="email" id="create-email" placeholder="mis. hello@acme.com" class="form-input text-xs">
                     </div>
                     <div class="sm:col-span-1">
-                        <label for="create-website" class="form-label text-[10px]">Website URL</label>
-                        <input type="text" name="website" id="create-website" placeholder="e.g. https://acme.com" class="form-input text-xs">
+                        <label for="create-website" class="form-label text-[10px]">URL Website</label>
+                        <input type="text" name="website" id="create-website" placeholder="mis. https://acme.com" class="form-input text-xs">
                     </div>
                 </div>
 
                 <div class="mb-6">
-                    <label for="create-address" class="form-label text-[10px]">Full Address</label>
-                    <textarea name="address" id="create-address" rows="3" placeholder="e.g. Jl. Basuki Rahmat No. 12" class="form-input resize-none text-xs"></textarea>
+                    <label for="create-address" class="form-label text-[10px]">Alamat Lengkap</label>
+                    <textarea name="address" id="create-address" rows="3" placeholder="mis. Jl. Basuki Rahmat No. 12" class="form-input resize-none text-xs"></textarea>
                 </div>
                 
                 <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                    <button type="button" onclick="closeCreateModal()" class="btn-secondary px-5 py-2.5 text-xs font-bold">Cancel</button>
+                    <button type="button" onclick="closeCreateModal()" class="btn-secondary px-5 py-2.5 text-xs font-bold">Batal</button>
                     <button type="submit" class="btn-primary shadow-lg shadow-indigo-500/20 px-6 py-2.5 text-xs">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                         </svg>
-                        <span>Add Lead</span>
+                        <span>Tambah Lead</span>
                     </button>
                 </div>
             </form>
@@ -553,7 +590,7 @@
                 <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
-                <span>Edit Lead Profile</span>
+                <span>Edit Profil Lead</span>
             </h3>
             <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white transition p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -568,7 +605,7 @@
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label for="edit-business-name" class="form-label text-[10px]">Business Name</label>
+                        <label for="edit-business-name" class="form-label text-[10px]">Nama Bisnis</label>
                         <input type="text" name="business_name" id="edit-business-name" required class="form-input text-xs">
                     </div>
                     <div>
@@ -579,46 +616,46 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label for="edit-city" class="form-label text-[10px]">City</label>
+                        <label for="edit-city" class="form-label text-[10px]">Kota</label>
                         <input type="text" name="city" id="edit-city" required class="form-input text-xs">
                     </div>
                     <div>
-                        <label class="form-label text-[10px]">Source Channel</label>
+                        <label class="form-label text-[10px]">Sumber</label>
                         <x-searchable-select name="source" 
                             id="edit-source" 
                             required="true" 
-                            :options="['google-maps' => 'Google Maps', 'website' => 'Website', 'custom' => 'Custom Import']"
+                            :options="['google-maps' => 'Google Maps', 'website' => 'Website', 'custom' => 'Input Manual']"
                             triggerClass="text-xs !py-2 !rounded-lg" />
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                     <div class="sm:col-span-1">
-                        <label for="edit-phone" class="form-label text-[10px]">Phone Number</label>
+                        <label for="edit-phone" class="form-label text-[10px]">Nomor Telepon</label>
                         <input type="text" name="phone" id="edit-phone" class="form-input text-xs">
                     </div>
                     <div class="sm:col-span-1">
-                        <label for="edit-email" class="form-label text-[10px]">Email Address</label>
+                        <label for="edit-email" class="form-label text-[10px]">Alamat Email</label>
                         <input type="email" name="email" id="edit-email" class="form-input text-xs">
                     </div>
                     <div class="sm:col-span-1">
-                        <label for="edit-website" class="form-label text-[10px]">Website URL</label>
+                        <label for="edit-website" class="form-label text-[10px]">URL Website</label>
                         <input type="text" name="website" id="edit-website" class="form-input text-xs">
                     </div>
                 </div>
 
                 <div class="mb-6">
-                    <label for="edit-address" class="form-label text-[10px]">Full Address</label>
+                    <label for="edit-address" class="form-label text-[10px]">Alamat Lengkap</label>
                     <textarea name="address" id="edit-address" rows="3" class="form-input resize-none text-xs"></textarea>
                 </div>
                 
                 <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                    <button type="button" onclick="closeEditModal()" class="btn-secondary px-5 py-2.5 text-xs font-bold">Cancel</button>
+                    <button type="button" onclick="closeEditModal()" class="btn-secondary px-5 py-2.5 text-xs font-bold">Batal</button>
                     <button type="submit" class="btn-primary shadow-lg shadow-indigo-500/20 px-6 py-2.5 text-xs">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                         </svg>
-                        <span>Save Changes</span>
+                        <span>Simpan Perubahan</span>
                     </button>
                 </div>
             </form>
@@ -645,13 +682,20 @@ function initBulkActions() {
 
     function updateBulkToolbar() {
         const checkedCount = document.querySelectorAll('.lead-checkbox:checked').length;
+        const allOnPage = checkedCount > 0 && checkedCount === getLeadCheckboxes().length;
+
+        if (!allOnPage) {
+            window.leadSelectAllFilter = false;
+        }
+        updateSelectAllBanner(checkedCount, allOnPage);
+
         if (checkedCount > 0) {
             bulkToolbar.classList.remove('hidden');
             setTimeout(() => {
                 bulkToolbar.style.opacity = '1';
                 bulkToolbar.style.transform = 'scale(1)';
             }, 10);
-            selectedCountSpan.textContent = checkedCount;
+            selectedCountSpan.textContent = window.leadSelectAllFilter ? LEAD_TOTAL.toLocaleString('id-ID') : checkedCount;
         } else {
             bulkToolbar.style.opacity = '0';
             bulkToolbar.style.transform = 'scale(0.95)';
@@ -666,6 +710,36 @@ function initBulkActions() {
             cb.checked = selectAllCheckbox.checked;
         });
         updateBulkToolbar();
+    });
+
+    // "Pilih semua hasil filter": aksi massal berlaku untuk semua lead yang cocok, bukan hanya halaman ini
+    const banner = document.getElementById('select-all-banner');
+    const bannerText = document.getElementById('select-all-text');
+    const bannerBtn = document.getElementById('select-all-filter-btn');
+
+    function updateSelectAllBanner(checkedCount, allOnPage) {
+        const pageCount = getLeadCheckboxes().length;
+        if (!allOnPage || LEAD_TOTAL <= pageCount) {
+            banner.classList.add('hidden');
+            return;
+        }
+        banner.classList.remove('hidden');
+        if (window.leadSelectAllFilter) {
+            bannerText.textContent = `Semua ${LEAD_TOTAL.toLocaleString('id-ID')} lead hasil filter dipilih.`;
+            bannerBtn.textContent = 'Batalkan';
+        } else {
+            bannerText.textContent = `${pageCount} lead di halaman ini dipilih.`;
+            bannerBtn.textContent = `Pilih semua ${LEAD_TOTAL.toLocaleString('id-ID')} lead hasil filter`;
+        }
+    }
+
+    bannerBtn.addEventListener('click', () => {
+        window.leadSelectAllFilter = !window.leadSelectAllFilter;
+        updateBulkToolbar();
+    });
+
+    document.getElementById('bulk-outreach-form').addEventListener('submit', function () {
+        fillSelectionFields(this);
     });
 
     // Delegate checkbox changes to the document body to survive HTML replacement from scraping refresh
@@ -684,6 +758,47 @@ function initBulkActions() {
     });
 }
 
+const LEAD_TOTAL = {{ (int) $leads->total() }};
+const LEAD_FILTERS = @js(array_filter($filters));
+window.leadSelectAllFilter = false;
+
+// Isi form aksi massal dengan pilihan saat ini: daftar ID, atau "semua hasil filter" + parameter filternya
+function fillSelectionFields(form) {
+    const box = form.querySelector('.select-all-fields');
+    box.innerHTML = '';
+    const add = (name, value) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        box.appendChild(input);
+    };
+
+    if (window.leadSelectAllFilter) {
+        add('select_all', '1');
+        Object.entries(LEAD_FILTERS).forEach(([key, value]) => add(key, value));
+    } else if (form.id !== 'bulk-outreach-form') {
+        // bulk-outreach-form sudah menerima checkbox lewat atribut form=""
+        document.querySelectorAll('.lead-checkbox:checked').forEach(cb => add('lead_ids[]', cb.value));
+    }
+}
+
+window.submitLeadBulk = function (action, stage = null) {
+    const form = document.getElementById('leads-bulk-form');
+    fillSelectionFields(form);
+    const box = form.querySelector('.select-all-fields');
+    [['action', action], ['pipeline_stage', stage]].forEach(([name, value]) => {
+        if (value === null) return;
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        box.appendChild(input);
+    });
+    form.submit();
+};
+
+
 // Global Modal handlers for View Details
 window.openViewModal = function(btn) {
     const name = btn.getAttribute('data-business-name');
@@ -696,12 +811,12 @@ window.openViewModal = function(btn) {
     const source = btn.getAttribute('data-source');
     const createdAt = btn.getAttribute('data-created-at');
 
-    document.getElementById('view-business-name').textContent = name || 'N/A';
-    document.getElementById('view-niche').textContent = niche || 'N/A';
-    document.getElementById('view-city').textContent = city || 'N/A';
-    document.getElementById('view-source').textContent = source || 'N/A';
-    document.getElementById('view-created-at').textContent = createdAt || 'N/A';
-    document.getElementById('view-address').textContent = address || 'No address registered';
+    document.getElementById('view-business-name').textContent = name || '—';
+    document.getElementById('view-niche').textContent = niche || '—';
+    document.getElementById('view-city').textContent = city || '—';
+    document.getElementById('view-source').textContent = source || '—';
+    document.getElementById('view-created-at').textContent = createdAt || '—';
+    document.getElementById('view-address').textContent = address || 'Alamat belum tercatat';
 
     // Initials
     const initials = name ? name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'LH';
@@ -716,7 +831,7 @@ window.openViewModal = function(btn) {
             link.className = "text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block cursor-pointer";
         } else {
             link.removeAttribute('href');
-            link.textContent = 'Not Available';
+            link.textContent = 'Tidak tersedia';
             link.className = "text-xs font-semibold text-slate-400 dark:text-slate-600 truncate block pointer-events-none";
         }
     }
@@ -732,7 +847,7 @@ window.openViewModal = function(btn) {
         webLink.className = "text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block cursor-pointer";
     } else {
         webLink.removeAttribute('href');
-        webLink.textContent = 'Not Available';
+        webLink.textContent = 'Tidak tersedia';
         webLink.className = "text-xs font-semibold text-slate-400 dark:text-slate-600 truncate block pointer-events-none";
     }
 
@@ -1035,13 +1150,13 @@ window.crawlLeadWebsite = async function(btn, id) {
                 btn.classList.remove('cursor-wait');
             }
         } else {
-            showToast(result.message || 'Failed to crawl website details.', 'error');
+            showToast(result.message || 'Gagal mengambil detail dari website.', 'error');
             btn.innerHTML = originalContent;
             btn.disabled = false;
             btn.classList.remove('cursor-wait');
         }
     } catch (e) {
-        showToast('An error occurred during crawling: ' + e.message, 'error');
+        showToast('Terjadi kesalahan saat crawling: ' + e.message, 'error');
         btn.innerHTML = originalContent;
         btn.disabled = false;
         btn.classList.remove('cursor-wait');

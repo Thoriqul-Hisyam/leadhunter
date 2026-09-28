@@ -27,11 +27,18 @@ class Setting extends Model
         'default_offer' => 'Jasa Pembuatan Website Profesional',
         'followup_enabled' => '0',
         'followup_days' => '3',
+        'weekly_report_enabled' => '1',
 
         // Koneksi AI (kosong = pakai nilai dari .env / config)
         'ai_base_url' => '',
         'ai_api_key' => '',
         'ai_model' => '',
+        'ai_fast_model' => '',
+        'ai_backup_base_url' => '',
+        'ai_backup_api_key' => '',
+        'ai_backup_model' => '',
+        'ai_prompt_variants' => '1',
+        'pagespeed_api_key' => '',
 
         // Email SMTP (kosong = pakai nilai dari .env / config)
         'mail_mailer' => '',
@@ -42,12 +49,34 @@ class Setting extends Model
         'mail_from_address' => '',
         'mail_from_name' => '',
         'imap_enabled' => '',
+
+        // WhatsApp gateway (kosong = pakai config/.env)
+        'wa_driver' => '',
+        'wa_token' => '',
+        'wa_base_url' => '',
+        'wa_sender' => '',
+        'wa_hourly_limit' => '',
+        'wa_daily_limit' => '',
+        'wa_allow_landline' => '',
+        'wa_webhook_token' => '',
+
+        // Aturan pengiriman (kosong = pakai config/.env)
+        'email_hourly_limit' => '',
+        'email_daily_limit' => '',
+        'send_window_start' => '',
+        'send_window_end' => '',
+        'send_weekdays_only' => '',
+
+        // Kapan koneksi terakhir berhasil dites (untuk checklist onboarding)
+        'ai_tested_at' => '',
+        'mail_tested_at' => '',
+        'wa_tested_at' => '',
     ];
 
     /**
      * Disimpan terenkripsi (APP_KEY) di database.
      */
-    public const SECRETS = ['ai_api_key', 'mail_password'];
+    public const SECRETS = ['ai_api_key', 'ai_backup_api_key', 'mail_password', 'wa_token', 'pagespeed_api_key'];
 
     protected const CACHE_KEY = 'app_settings';
 

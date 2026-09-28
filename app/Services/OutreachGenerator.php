@@ -31,7 +31,9 @@ class OutreachGenerator
 
         foreach ($leads as $lead) {
             foreach ($channels as $channel) {
-                if ($this->hasOpenMessage($lead, $campaign, $channel)) {
+                if ($this->hasOpenMessage($lead, $campaign, $channel)
+                    || ($channel === 'whatsapp' && empty($lead->whatsapp_number))
+                    || ($channel === 'email' && empty($lead->email))) {
                     $skipped++;
 
                     continue;

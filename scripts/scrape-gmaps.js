@@ -29,9 +29,28 @@ import { launchBrowser, newPage, crawlForContacts, isSocialUrl, delay } from './
 
         // Tutup dialog persetujuan cookie jika muncul.
         try {
-            const btn = await page.$('button[aria-label="Accept all"], button[aria-label="Terima semua"]');
+            const btn = await page.$('button[aria-label="Accept all"], button[aria-label="Terima semua"], form[action*="consent"] button');
             if (btn) { await btn.click(); await delay(2000); }
         } catch (e) {}
+
+        // Google memblokir dengan CAPTCHA ("unusual traffic") atau tertahan di halaman consent.
+        const blocked = await page.evaluate(() => {
+            const text = (document.body?.innerText || '').toLowerCase();
+            if (location.pathname.startsWith('/sorry') || text.includes('unusual traffic') || text.includes('lalu lintas yang tidak biasa') || document.querySelector('iframe[src*="recaptcha"]')) {
+                return 'captcha';
+            }
+            if (location.hostname.startsWith('consent.')) {
+                return 'consent';
+            }
+            return null;
+        });
+
+        if (blocked) {
+            console.error(blocked === 'captcha' ? 'BLOCKED:captcha' : 'BLOCKED:consent');
+            console.log('SUMMARY:' + JSON.stringify({ found: 0, blocked }));
+            process.exitCode = 3;
+            return;
+        }
 
         try {
             await page.waitForSelector('a[href*="/maps/place/"]', { timeout: 15000 });

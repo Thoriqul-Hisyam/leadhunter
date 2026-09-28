@@ -102,7 +102,7 @@
                                 <div class="flex items-center justify-end gap-2.5">
                                     {{-- Edit link --}}
                                     <a href="{{ route('roles.edit', $role->id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-                                        <span>Edit</span>
+                                        <span>Ubah</span>
                                     </a>
 
                                     @if(!in_array($role->slug, ['admin', 'user']))
@@ -112,7 +112,7 @@
                                             @method('DELETE')
                                             <button type="submit" onclick="return handleConfirm(event, this.form, 'Hapus Role', 'Apakah Anda yakin ingin menghapus role {{ $role->name }} dari sistem? Ini akan melepaskan hak akses dari semua user terkait.', 'Hapus Role')"
                                                 class="text-rose-600 dark:text-rose-400 hover:underline cursor-pointer border-0 bg-transparent flex items-center gap-1 font-semibold">
-                                                <span>Hapus</span
+                                                <span>Hapus</span>
                                             </button>
                                         </form>
                                     @else

@@ -1,7 +1,7 @@
 ﻿@extends('layouts.app')
 
 @section('title', 'Outreach - Sandesa')
-@section('header', 'Outreach Management')
+@section('header', 'Kelola Outreach')
 
 @section('content')
 {{-- ===== STUNNING OUTREACH COMPOSER ===== --}}
@@ -14,50 +14,46 @@
                 @csrf
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label for="composer_campaign_id" class="form-label text-xs">Target Campaign</label>
-                        <x-searchable-select id="composer-campaign-select" inputId="composer_campaign_id" name="campaign_id" :required="true" placeholder="Choose a campaign..." :options="$campaigns->mapWithKeys(fn($c) => [$c->id => $c->name . ' (' . $c->niche . ')'])->toArray()" triggerClass="form-select text-xs w-full" />
+                        <label for="composer_campaign_id" class="form-label text-xs">Campaign Tujuan</label>
+                        <x-searchable-select id="composer-campaign-select" inputId="composer_campaign_id" name="campaign_id" :required="true" placeholder="Pilih campaign..." :options="$campaigns->mapWithKeys(fn($c) => [$c->id => $c->name . ' (' . $c->niche . ')'])->toArray()" triggerClass="form-select text-xs w-full" />
                     </div>
 
                     <div>
-                        <label for="composer_type" class="form-label text-xs">Outreach Channel</label>
+                        <label for="composer_type" class="form-label text-xs">Channel Outreach</label>
                         <x-searchable-select id="composer-type-select" inputId="composer_type" name="type" :required="true" :selected="'email'" :options="['email' => 'Email', 'whatsapp' => 'WhatsApp']" triggerClass="form-select text-xs w-full" />
                     </div>
 
                     <div>
-                        <label for="composer_mode" class="form-label text-xs">Composition Mode</label>
-                        <x-searchable-select id="composer-mode-select" inputId="composer_mode" name="mode" :required="true" :selected="'hybrid'" :options="['hybrid' => 'Template + AI Polish', 'template' => 'Master Template', 'ai' => 'AI Generate']" triggerClass="form-select text-xs w-full" />
+                        <label for="composer_mode" class="form-label text-xs">Mode Penyusunan</label>
+                        <x-searchable-select id="composer-mode-select" inputId="composer_mode" name="mode" :required="true" :selected="'hybrid'" :options="['hybrid' => 'Hybrid (Template + AI)', 'template' => 'Template', 'ai' => 'AI Generate']" triggerClass="form-select text-xs w-full" />
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div id="composer_template_wrapper" class="md:col-span-1">
-                        <label for="composer_template_id" class="form-label text-xs">Select Template</label>
-                        <x-searchable-select id="composer-template-select" inputId="composer_template_id" name="template_id" placeholder="Choose template..." :options="[]" triggerClass="form-select text-xs w-full" />
+                        <label for="composer_template_id" class="form-label text-xs">Pilih Template</label>
+                        <x-searchable-select id="composer-template-select" inputId="composer_template_id" name="template_id" placeholder="Pilih template..." :options="[]" triggerClass="form-select text-xs w-full" />
                     </div>
 
                     <div id="composer_offer_wrapper" class="md:col-span-1">
                         <label for="composer_offer" class="form-label text-xs">Layanan / Penawaran</label>
-                        <input type="text" name="offer" id="composer_offer" value="{{ $defaultOffer }}" placeholder="e.g. Pembuatan Website" class="form-input text-xs">
+                        <input type="text" name="offer" id="composer_offer" value="{{ $defaultOffer }}" placeholder="mis. Pembuatan Website" class="form-input text-xs">
                     </div>
 
                     <div id="composer_sender_wrapper" class="md:col-span-1">
                         <label for="composer_sender" class="form-label text-xs">Identitas Pengirim</label>
-                        <input type="text" name="sender_name" id="composer_sender" value="{{ $senderName }}" placeholder="e.g. Thoriq dari Lefateach" class="form-input text-xs">
+                        <input type="text" name="sender_name" id="composer_sender" value="{{ $senderName }}" placeholder="mis. Thoriq dari Lefateach" class="form-input text-xs">
                     </div>
                 </div>
 
                 {{-- Leads Selection --}}
                 <div class="border-t border-slate-200/50 dark:border-slate-800/60 pt-4">
-                    @php
-                        $leadNiches = $leads->pluck('niche')->filter()->map(fn($n) => strtolower(trim($n)))->unique()->sort()->values();
-                        $leadCities = $leads->pluck('city')->filter()->map(fn($c) => strtolower(trim($c)))->unique()->sort()->values();
-                    @endphp
                     <div class="flex justify-between items-center mb-3">
-                        <label class="form-label text-xs !mb-0 font-bold text-slate-700 dark:text-slate-350">Select Targets</label>
+                        <label class="form-label text-xs !mb-0 font-bold text-slate-700 dark:text-slate-350">Pilih Target</label>
                         <div class="flex items-center gap-2">
                             <label class="flex items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-400 cursor-pointer bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition">
                                 <input type="checkbox" id="select-all-leads" class="form-checkbox h-3.5 w-3.5 rounded text-indigo-600 border-slate-300">
-                                <span>Select All</span>
+                                <span>Pilih semua</span>
                             </label>
                             <button type="button" id="btn-smart-select" class="text-[10px] bg-gradient-to-r from-indigo-600 to-purple-600 px-2.5 py-1 rounded-lg text-white font-bold hover:shadow-lg hover:shadow-indigo-500/20 transition border border-indigo-500/30 inline-flex items-center gap-1">
                                 <x-icon name="sparkles" class="w-3 h-3" /> Smart Select
@@ -71,7 +67,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </span>
-                            <input type="text" id="lead-search-input" placeholder="Search by business, city, niche..." class="w-full pl-8 pr-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200">
+                            <input type="text" id="lead-search-input" placeholder="Cari nama bisnis, kota, niche..." class="w-full pl-8 pr-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                             <x-searchable-select
@@ -79,46 +75,36 @@
                                 inputId="lead-niche-filter"
                                 name="lead_niche_filter"
                                 :selected="''"
-                                placeholder="All Niches"
-                                :options="$leadNiches->mapWithKeys(fn($n) => [$n => ucfirst($n)])->toArray()"
+                                placeholder="Semua Niche"
+                                :options="$leadNiches->mapWithKeys(fn($n) => [$n => $n])->toArray()"
                                 triggerClass="w-full px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 transition hover:border-indigo-300" />
                             <x-searchable-select
                                 id="lead-city-filter-select"
                                 inputId="lead-city-filter"
                                 name="lead_city_filter"
                                 :selected="''"
-                                placeholder="All Locations"
-                                :options="$leadCities->mapWithKeys(fn($c) => [$c => ucfirst($c)])->toArray()"
+                                placeholder="Semua Lokasi"
+                                :options="$leadCities->mapWithKeys(fn($c) => [$c => $c])->toArray()"
                                 triggerClass="w-full px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 transition hover:border-indigo-300" />
                         </div>
                         <div class="grid grid-cols-3 gap-1.5">
-                            <button type="button" id="filter-has-email" data-active="0" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 transition hover:border-indigo-300 hover:text-indigo-600">Has Email</button>
-                            <button type="button" id="filter-has-phone" data-active="0" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 transition hover:border-indigo-300 hover:text-indigo-600">Has Phone</button>
-                            <button type="button" id="filter-has-website" data-active="0" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 transition hover:border-indigo-300 hover:text-indigo-600">Has Website</button>
+                            <button type="button" id="filter-has-email" data-active="0" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 transition hover:border-indigo-300 hover:text-indigo-600">Punya Email</button>
+                            <button type="button" id="filter-has-phone" data-active="0" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 transition hover:border-indigo-300 hover:text-indigo-600">Punya Telepon</button>
+                            <button type="button" id="filter-has-website" data-active="0" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 transition hover:border-indigo-300 hover:text-indigo-600">Punya Website</button>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-xl overflow-hidden shadow-inner">
                         <div class="max-h-[320px] overflow-y-auto p-2 space-y-1.5" id="leads-checkbox-list">
-                            @forelse($leads as $lead)
-                                <label class="lead-item flex items-center justify-between p-2.5 rounded-lg border border-slate-100 dark:border-slate-800/50 hover:border-indigo-500/20 hover:bg-indigo-500/5 cursor-pointer transition" data-id="{{ $lead->id }}" data-email="{{ !empty($lead->email) ? 'yes' : 'no' }}" data-phone="{{ !empty($lead->phone) ? 'yes' : 'no' }}" data-website="{{ !empty($lead->website) ? 'yes' : 'no' }}" data-niche="{{ strtolower($lead->niche) }}" data-city="{{ strtolower($lead->city) }}">
-                                    <div class="flex items-center gap-3">
-                                        <input type="checkbox" name="lead_ids[]" value="{{ $lead->id }}" class="lead-checkbox form-checkbox h-4.5 w-4.5 rounded text-indigo-600 border-slate-300">
-                                        <div>
-                                            <div class="text-xs font-bold text-slate-800 dark:text-slate-200">{{ $lead->business_name }}</div>
-                                            <div class="text-[9px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
-                                                <span>{{ $lead->city }}</span>
-                                                <span class="px-1 bg-slate-100 dark:bg-slate-850 rounded border dark:border-slate-750 font-bold capitalize text-indigo-500">{{ $lead->niche }}</span>
-                                                @if($lead->email) <span class="text-sky-600 bg-sky-500/10 px-1.5 py-0.5 rounded font-semibold">Email</span> @endif
-                                                @if($lead->phone) <span class="text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded font-semibold">Phone</span> @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                </label>
-                            @empty
-                                <div class="text-center py-8 text-xs font-bold text-slate-400 dark:text-slate-500">
-                                    No leads available in database.<br>Go to Leads page and scrape some!
-                                </div>
-                            @endforelse
+                            <div id="leads-list-status" class="text-center py-8 text-xs font-bold text-slate-400 dark:text-slate-500">
+                                {{ $totalLeads ? 'Memuat lead...' : 'Belum ada lead. Scrape dulu di halaman Leads.' }}
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between gap-2 px-3 py-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+                            <span class="text-slate-500 dark:text-slate-400"><strong id="leads-selected-count" class="text-slate-800 dark:text-slate-100">0</strong> dipilih · <span id="leads-shown-count">0</span> dari <span id="leads-total-count">0</span> ditampilkan</span>
+                            <span class="flex items-center gap-3">
+                                <button type="button" id="leads-clear-selection" class="font-semibold text-slate-500 hover:text-rose-500 hidden">Hapus pilihan</button>
+                                <button type="button" id="leads-load-more" class="font-bold text-indigo-600 dark:text-indigo-400 hover:underline hidden">Muat lebih banyak</button>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -129,7 +115,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
-                        <span>Generate & Preview</span>
+                        <span>Buat & Pratinjau</span>
                     </button>
                 </div>
             </form>
@@ -147,7 +133,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Preview & Personalize Outreach Pipeline</h3>
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Pratinjau & Personalisasi Pesan Outreach</h3>
             </div>
             <button type="button" onclick="closeComposerPreviewModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white transition p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -163,12 +149,12 @@
         <div class="bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200/60 dark:border-slate-700/60 p-4 flex justify-between items-center shrink-0">
             <span class="text-2xs text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">Mode: <span id="composer-footer-mode-label" class="text-indigo-500 font-bold">Hybrid</span></span>
             <div class="flex gap-3">
-                <button type="button" onclick="closeComposerPreviewModal()" class="btn-secondary px-5 py-2 text-xs">Cancel</button>
+                <button type="button" onclick="closeComposerPreviewModal()" class="btn-secondary px-5 py-2 text-xs">Batal</button>
                 <button type="button" id="btn-save-composer-pipeline" onclick="saveComposerPipeline()" class="btn-success shadow-lg shadow-emerald-500/20 px-6 py-2 text-xs">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Save & Add to Pipeline</span>
+                    <span>Simpan ke Pipeline</span>
                 </button>
             </div>
         </div>
@@ -185,26 +171,26 @@
                 </svg>
             </div>
             <div>
-                <h3 class="text-base font-bold text-slate-900 dark:text-white">Outreach Pipeline</h3>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400">Review, edit, and send your messages</p>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white">Pipeline Outreach</h3>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Tinjau, edit, dan kirim pesan Anda</p>
             </div>
         </div>
         
-        <form action="{{ route('outreach.bulk') }}" method="POST" id="bulkOutreachForm" class="flex gap-2 items-center w-full sm:w-auto" onsubmit="return handleConfirm(event, this, 'Apply Bulk Action?', 'Are you sure you want to apply this action to all selected messages?', 'Yes, Apply')">
+        <form action="{{ route('outreach.bulk') }}" method="POST" id="bulkOutreachForm" class="flex gap-2 items-center w-full sm:w-auto" onsubmit="return handleConfirm(event, this, 'Jalankan Aksi Massal?', 'Yakin ingin menjalankan aksi ini untuk semua pesan yang dipilih?', 'Ya, Jalankan')">
             @csrf
             <x-searchable-select name="action" 
                 required="true" 
                 placeholder="Aksi massal" 
                 :options="[
-                    'send_queue' => 'Kirim Email via Antrean',
-                    'delete' => 'Delete Selected',
-                    'status_pending' => 'Mark as Pending (batalkan antrean)',
-                    'status_sent' => 'Mark as Sent',
-                    'status_replied' => 'Mark as Replied',
-                    'status_failed' => 'Mark as Failed'
+                    'send_queue' => 'Kirim via Antrean (email & WhatsApp)',
+                    'delete' => 'Hapus yang Dipilih',
+                    'status_pending' => 'Tandai sebagai Draft (batalkan antrean)',
+                    'status_sent' => 'Tandai sebagai Terkirim',
+                    'status_replied' => 'Tandai sebagai Dibalas',
+                    'status_failed' => 'Tandai sebagai Gagal'
                 ]"
                 triggerClass="form-select text-xs w-full sm:w-48 !py-1.5 !rounded-lg" />
-            <button type="submit" class="btn-secondary py-1.5 px-4 text-xs font-bold">Apply</button>
+            <button type="submit" class="btn-secondary py-1.5 px-4 text-xs font-bold">Terapkan</button>
             <a href="{{ route('outreach.export', request()->only(['status', 'campaign_id'])) }}" class="btn-secondary py-1.5 px-3 text-xs font-bold whitespace-nowrap" title="Export hasil outreach ke CSV"><x-icon name="download" class="w-3.5 h-3.5" /> CSV</a>
         </form>
     </div>
@@ -213,14 +199,14 @@
     <div class="flex flex-wrap items-center gap-2 mb-5">
         @php $currentStatus = request('status'); @endphp
         <a href="{{ route('outreach.index', request()->except(['status', 'page'])) }}" class="px-3 py-1 rounded-full text-[11px] font-bold border transition {{ !$currentStatus ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-600' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400' }}">Semua</a>
-        @foreach(['pending' => 'Pending', 'queued' => 'Antrean', 'sent' => 'Sent', 'replied' => 'Replied', 'failed' => 'Failed'] as $value => $label)
+        @foreach(['pending' => 'Draft', 'queued' => 'Antre', 'sent' => 'Terkirim', 'replied' => 'Dibalas', 'failed' => 'Gagal'] as $value => $label)
             <a href="{{ route('outreach.index', array_merge(request()->except('page'), ['status' => $value])) }}" class="px-3 py-1 rounded-full text-[11px] font-bold border transition {{ $currentStatus === $value ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-600' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400' }}">{{ $label }}</a>
         @endforeach
     </div>
 
     @if($fakeMailer)
         <div class="alert-error mb-5">
-            <span><strong>MAIL_MAILER={{ config('mail.default') }}:</strong> email hanya ditulis ke <code>storage/logs/laravel.log</code>, tidak benar-benar terkirim. Isi konfigurasi SMTP Gmail di <code>.env</code> untuk mengirim sungguhan.</span>
+            <span><strong>Mode kirim email: log.</strong> Email hanya ditulis ke <code>storage/logs/laravel.log</code>, tidak benar-benar terkirim. Pilih SMTP di @can('manage_settings')<a href="{{ route('settings.edit') }}#koneksi" class="underline font-semibold">Pengaturan → Koneksi</a>@else Pengaturan → Koneksi @endcan untuk mengirim sungguhan.</span>
         </div>
     @endif
 
@@ -254,9 +240,9 @@
                 <tr>
                     <th style="width: 45px"><input type="checkbox" id="selectAllOutreach" class="form-checkbox h-4.5 w-4.5 rounded text-indigo-600 border-slate-300"></th>
                     <th style="width: 25%">Target</th>
-                    <th style="width: 45%">Message Preview</th>
+                    <th style="width: 45%">Pratinjau Pesan</th>
                     <th>Status</th>
-                    <th class="text-right">Action</th>
+                    <th class="text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -305,7 +291,7 @@
                                             data-subject="{{ $msg->subject }}"
                                             data-message="{{ $msg->message }}"
                                             onclick="openEditModal(this.dataset.id, this.dataset.subject, this.dataset.message)"
-                                            class="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-indigo-500/20 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition" title="Edit Message">
+                                            class="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-indigo-500/20 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition" title="Edit Pesan">
                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                         </svg>
@@ -340,17 +326,19 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                     </svg>
                                 @endif
-                                {{ ucfirst($msg->status) }}
+                                {{ $msg->statusLabel() }}
                             </span>
                             @if($msg->sent_at)
-                                <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{{ $msg->sent_at->format('M d, H:i') }}</span>
+                                <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{{ $msg->sent_at->translatedFormat('d M H:i') }}</span>
                             @endif
                             @if($msg->status === 'queued')
-                                <span class="text-[10px] text-violet-600 dark:text-violet-400 font-medium">{{ $msg->scheduled_at ? 'Jadwal: '.$msg->scheduled_at->format('d M H:i') : 'Sedang diproses...' }}</span>
+                                <span class="text-[10px] text-violet-600 dark:text-violet-400 font-medium">{{ $msg->scheduled_at ? 'Jadwal: '.$msg->scheduled_at->translatedFormat('d M H:i') : 'Sedang diproses...' }}</span>
                             @endif
-                            @if($msg->followup_of_id)
-                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1"><x-icon name="reply" class="w-3 h-3" /> Follow-up</span>
+                            @if($msg->isSequenceStep())
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1"><x-icon name="reply" class="w-3 h-3" /> Follow-up · langkah {{ $msg->step }}</span>
                             @endif
+                            @include('outreach.partials.reply-category', ['message' => $msg])
+                            @include('outreach.partials.review-badge', ['message' => $msg])
                             @if($msg->status === 'failed' && $msg->last_error)
                                 <span class="text-[10px] text-rose-600 dark:text-rose-400 max-w-44 line-clamp-2" title="{{ $msg->last_error }}">{{ $msg->last_error }}</span>
                             @endif
@@ -359,21 +347,21 @@
                     <td class="align-top py-4 text-right">
                         <div class="flex flex-col items-end gap-2.5">
                             @if($msg->status == 'pending')
-                                <form action="{{ route('outreach.send', $msg->id) }}" method="POST" class="inline" @if(($msg->type ?? 'email') === 'whatsapp') target="_blank" @endif>
+                                <form action="{{ route('outreach.send', $msg->id) }}" method="POST" class="inline" @if(($msg->type ?? 'email') === 'whatsapp' && ! $waGatewayActive) target="_blank" @endif>
                                     @csrf
                                     @if(($msg->type ?? 'email') === 'whatsapp')
                                         <button type="submit" class="btn-success shadow-md shadow-emerald-500/10 text-xs py-1.5 px-4 rounded-lg">
                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                             </svg>
-                                            <span>Send WA</span>
+                                            <span>{{ $waGatewayActive ? 'Kirim WA' : 'Buka WA' }}</span>
                                         </button>
                                     @else
                                         <button type="submit" class="btn-primary shadow-md shadow-indigo-500/10 text-xs py-1.5 px-4 rounded-lg">
                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9-2-9-18-9 18 9-2zm0 0v-8" />
                                             </svg>
-                                            <span>Send Email</span>
+                                            <span>Kirim Email</span>
                                         </button>
                                     @endif
                                 </form>
@@ -390,26 +378,26 @@
                                     <form action="{{ route('outreach.status', $msg->id) }}" method="POST" class="inline">
                                         @csrf
                                         <input type="hidden" name="status" value="replied">
-                                        <button type="submit" class="btn-success py-1 px-3 text-[11px] font-bold rounded-lg" title="Mark as Replied">
-                                            <span>Replied</span>
+                                        <button type="submit" class="btn-success py-1 px-3 text-[11px] font-bold rounded-lg" title="Tandai sebagai Dibalas">
+                                            <span>Dibalas</span>
                                         </button>
                                     </form>
                                     <form action="{{ route('outreach.status', $msg->id) }}" method="POST" class="inline">
                                         @csrf
                                         <input type="hidden" name="status" value="failed">
-                                        <button type="submit" class="btn-secondary py-1 px-3 text-[11px] font-bold text-red-500 dark:text-red-400 border-red-500/20 hover:border-red-500/40 hover:bg-red-500/5 rounded-lg" title="Mark as Failed">
-                                            <span>Failed</span>
+                                        <button type="submit" class="btn-secondary py-1 px-3 text-[11px] font-bold text-red-500 dark:text-red-400 border-red-500/20 hover:border-red-500/40 hover:bg-red-500/5 rounded-lg" title="Tandai sebagai Gagal">
+                                            <span>Gagal</span>
                                         </button>
                                     </form>
                                 </div>
                             @elseif($msg->status == 'replied')
                                 <div class="flex flex-col items-end gap-1.5">
-                                    <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/15 px-2 py-1 rounded"><x-icon name="trophy" class="w-3.5 h-3.5" /> Deal Closed</span>
+                                    <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/15 px-2 py-1 rounded"><x-icon name="trophy" class="w-3.5 h-3.5" /> Deal Tercapai</span>
                                     <form action="{{ route('outreach.status', $msg->id) }}" method="POST" class="inline">
                                         @csrf
                                         <input type="hidden" name="status" value="pending">
                                         <button type="submit" class="text-slate-500 hover:text-slate-800 dark:hover:text-white text-[10px] font-semibold underline bg-transparent border-none cursor-pointer transition">
-                                            Reset Status
+                                            Atur Ulang Status
                                         </button>
                                     </form>
                                 </div>
@@ -418,24 +406,24 @@
                                     <form action="{{ route('outreach.send', $msg->id) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit" class="btn-pink shadow-md shadow-pink-500/15 py-1 px-3 text-[11px] font-bold rounded-lg">
-                                            <span>Retry</span>
+                                            <span>Coba Lagi</span>
                                         </button>
                                     </form>
                                     <form action="{{ route('outreach.status', $msg->id) }}" method="POST" class="inline">
                                         @csrf
                                         <input type="hidden" name="status" value="pending">
                                         <button type="submit" class="text-slate-500 hover:text-slate-800 dark:hover:text-white text-[10px] font-semibold underline bg-transparent border-none cursor-pointer transition">
-                                            Reset Status
+                                            Atur Ulang Status
                                         </button>
                                     </form>
                                 </div>
                             @endif
 
-                            <form action="{{ route('outreach.destroy', $msg->id) }}" method="POST" class="inline mt-2 border-t border-slate-100 dark:border-slate-800 pt-2 w-full text-right" onsubmit="return handleConfirm(event, this, 'Delete Message?', 'Are you sure you want to delete this outreach message? This cannot be undone.', 'Yes, Delete')">
+                            <form action="{{ route('outreach.destroy', $msg->id) }}" method="POST" class="inline mt-2 border-t border-slate-100 dark:border-slate-800 pt-2 w-full text-right" onsubmit="return handleConfirm(event, this, 'Hapus Pesan?', 'Yakin ingin menghapus pesan outreach ini? Tindakan ini tidak bisa dibatalkan.', 'Ya, Hapus')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-slate-500 hover:text-red-500 text-[10px] transition font-semibold" title="Delete Message">
-                                    Delete
+                                <button type="submit" class="text-slate-500 hover:text-red-500 text-[10px] transition font-semibold" title="Hapus Pesan">
+                                    Hapus
                                 </button>
                             </form>
                         </div>
@@ -450,8 +438,8 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                                 </svg>
                             </div>
-                            <p class="font-bold text-slate-500 dark:text-slate-400">Your Pipeline is Empty</p>
-                            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">Select a campaign and target leads in the generator above to let AI craft your perfect pitch.</p>
+                            <p class="font-bold text-slate-500 dark:text-slate-400">Pipeline Masih Kosong</p>
+                            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">Pilih campaign dan lead target di composer di atas, lalu biarkan AI menyusun pesan yang pas.</p>
                         </div>
                     </td>
                 </tr>
@@ -474,7 +462,7 @@
                 <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
-                <span>Edit AI Message</span>
+                <span>Edit Pesan AI</span>
             </h3>
             <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white transition p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -485,7 +473,7 @@
         <div class="p-6">
             <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3.5 mb-5 flex items-start gap-3">
                 <span class="text-amber-500"><x-icon name="light-bulb" class="w-4 h-4" /></span>
-                <p class="text-xs text-amber-700 dark:text-amber-200/80 leading-relaxed">You are editing the raw message. Be careful with formatting. Changes will be saved permanently for this specific outreach attempt.</p>
+                <p class="text-xs text-amber-700 dark:text-amber-200/80 leading-relaxed">Anda sedang mengedit teks asli pesan. Perhatikan format penulisannya. Perubahan akan disimpan permanen untuk pesan outreach ini.</p>
             </div>
 
             <form id="editForm" method="POST">
@@ -493,7 +481,7 @@
                 @method('PUT')
                 
                 <div class="mb-5">
-                    <label class="form-label text-xs">Subject Line <span class="text-[10px] text-slate-500 ml-2 font-normal">(Leave empty for WhatsApp)</span></label>
+                    <label class="form-label text-xs">Subjek <span class="text-[10px] text-slate-500 ml-2 font-normal">(Kosongkan untuk WhatsApp)</span></label>
                     <input type="text" name="subject" id="editSubject" class="form-input">
                 </div>
                 
@@ -501,29 +489,29 @@
                     <label class="form-label text-xs flex justify-between items-center mb-2">
                         <span class="text-indigo-700 dark:text-indigo-300 font-bold flex items-center gap-1.5">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                            Regenerate with AI
+                            Generate Ulang dengan AI
                         </span>
                     </label>
                     <div class="flex flex-col gap-2">
-                        <textarea id="customPrompt" rows="2" class="form-input text-xs w-full" placeholder="Optional: Enter a custom prompt (e.g. 'Make it more funny', 'Mention our discount promo')"></textarea>
+                        <textarea id="customPrompt" rows="2" class="form-input text-xs w-full" placeholder="Opsional: tulis instruksi khusus (mis. 'Buat lebih santai', 'Sebutkan promo diskon kami')"></textarea>
                         <button type="button" id="btnRegenerate" onclick="regenerateMessage()" class="btn-primary py-2 text-xs self-end inline-flex items-center gap-1.5">
-                            <x-icon name="sparkles" class="w-3.5 h-3.5" /> Regenerate Now
+                            <x-icon name="sparkles" class="w-3.5 h-3.5" /> Generate Ulang
                         </button>
                     </div>
                 </div>
                 
                 <div class="mb-6">
-                    <label class="form-label text-xs">Message Body</label>
+                    <label class="form-label text-xs">Isi Pesan</label>
                     <textarea name="message" id="editMessage" rows="10" required class="form-input font-mono text-xs leading-relaxed resize-y"></textarea>
                 </div>
                 
                 <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                    <button type="button" onclick="closeEditModal()" class="btn-secondary px-5 py-2.5">Cancel</button>
+                    <button type="button" onclick="closeEditModal()" class="btn-secondary px-5 py-2.5">Batal</button>
                     <button type="submit" class="btn-primary shadow-lg shadow-indigo-500/20 px-6 py-2.5">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                         </svg>
-                        <span>Save Changes</span>
+                        <span>Simpan Perubahan</span>
                     </button>
                 </div>
             </form>
@@ -571,7 +559,7 @@
         const customPrompt = document.getElementById('customPrompt').value.trim();
         const originalText = btn.innerHTML;
         
-        btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating...';
+        btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Membuat ulang...';
         btn.disabled = true;
         
         try {
@@ -592,13 +580,13 @@
                     document.getElementById('editSubject').value = data.subject;
                 }
                 document.getElementById('editMessage').value = data.message;
-                window.showToast('Message regenerated successfully! Review and click Save.', 'success');
+                window.showToast('Pesan berhasil dibuat ulang! Periksa lalu klik Simpan Perubahan.', 'success');
             } else {
-                window.showToast(data.message || 'Error regenerating message.', 'error');
+                window.showToast(data.message || 'Gagal membuat ulang pesan.', 'error');
             }
         } catch (e) {
             console.error(e);
-            window.showToast('Network error while regenerating.', 'error');
+            window.showToast('Kesalahan jaringan saat membuat ulang pesan.', 'error');
         } finally {
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -631,13 +619,15 @@
     const filterHasWebsiteBtn = document.getElementById('filter-has-website');
     const btnSmartSelect = document.getElementById('btn-smart-select');
 
-    function getLeadCheckboxes() {
-        return Array.from(document.querySelectorAll('#leads-checkbox-list .lead-checkbox'));
-    }
-
-    function getVisibleLeadItems() {
-        return Array.from(document.querySelectorAll('#leads-checkbox-list .lead-item')).filter(item => !item.classList.contains('hidden'));
-    }
+    // Daftar lead dimuat bertahap dari server (tidak lagi semua lead sekaligus).
+    // Pilihan disimpan di selectedLeads sehingga tetap terpilih walau filter berubah.
+    const selectedLeads = new Map(); // id → nama bisnis
+    const leadsList = document.getElementById('leads-checkbox-list');
+    const leadsLoadMoreBtn = document.getElementById('leads-load-more');
+    const leadsClearBtn = document.getElementById('leads-clear-selection');
+    const leadsFilterUrl = @js(route('campaigns.leads.filter'));
+    let leadPage = 1;
+    let leadController = null;
 
     function debounce(func, wait = 250) {
         let timeout;
@@ -653,46 +643,108 @@
         btn.classList.toggle('bg-indigo-500/10', active);
         btn.classList.toggle('text-indigo-600', active);
         btn.classList.toggle('border-indigo-500/30', active);
-        btn.classList.toggle('dark:text-indigo-400', active);
-        btn.classList.toggle('shadow-sm', active);
         btn.classList.toggle('bg-white', !active);
         btn.classList.toggle('dark:bg-slate-900', !active);
-        btn.classList.toggle('border-slate-200', !active);
-        btn.classList.toggle('dark:border-slate-700', !active);
         btn.classList.toggle('text-slate-500', !active);
-        btn.classList.toggle('dark:text-slate-400', !active);
-        if (!active) {
-            btn.classList.remove('dark:text-indigo-400', 'shadow-sm');
+    }
+
+    function leadFilterParams(extra = {}) {
+        const params = new URLSearchParams();
+        const search = (leadSearchInput?.value || '').trim();
+        if (search) params.set('search', search);
+        if (leadNicheFilterInput?.value) params.set('niche', leadNicheFilterInput.value);
+        if (leadCityFilterInput?.value) params.set('city', leadCityFilterInput.value);
+        if (filterHasEmailBtn?.dataset.active === '1') params.set('has_email', 'yes');
+        if (filterHasPhoneBtn?.dataset.active === '1') params.set('has_phone', 'yes');
+        if (filterHasWebsiteBtn?.dataset.active === '1') params.set('has_website', 'yes');
+        Object.entries(extra).forEach(([key, value]) => params.set(key, value));
+        return params;
+    }
+
+    function updateLeadCounters(shown, total, hasMore) {
+        document.getElementById('leads-selected-count').textContent = selectedLeads.size;
+        if (shown !== undefined) {
+            document.getElementById('leads-shown-count').textContent = shown;
+            document.getElementById('leads-total-count').textContent = total;
+            leadsLoadMoreBtn.classList.toggle('hidden', !hasMore);
+        }
+        leadsClearBtn.classList.toggle('hidden', selectedLeads.size === 0);
+    }
+
+    function renderLeadItem(lead) {
+        const label = document.createElement('label');
+        label.className = 'lead-item flex items-center justify-between p-2.5 rounded-lg border border-slate-100 dark:border-slate-800/50 hover:border-indigo-500/20 hover:bg-indigo-500/5 cursor-pointer transition';
+        label.dataset.id = lead.id;
+        const badges = [
+            lead.email ? '<span class="text-sky-600 bg-sky-500/10 px-1.5 py-0.5 rounded font-semibold">Email</span>' : '',
+            lead.phone ? '<span class="text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded font-semibold">' + (lead.phone_is_mobile ? 'WA' : 'Telp. kantor') + '</span>' : '',
+            lead.score >= 70 ? '<span class="text-rose-600 bg-rose-500/10 px-1.5 py-0.5 rounded font-semibold">Hot ' + lead.score + '</span>' : '',
+        ].join('');
+        label.innerHTML = `
+            <div class="flex items-center gap-3">
+                <input type="checkbox" value="${lead.id}" class="lead-checkbox form-checkbox h-4.5 w-4.5 rounded text-indigo-600 border-slate-300">
+                <div>
+                    <div class="text-xs font-bold text-slate-800 dark:text-slate-200">${escapeHtml(lead.business_name)}</div>
+                    <div class="text-[9px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+                        <span>${escapeHtml(lead.city || '')}</span>
+                        <span class="px-1 rounded border font-bold text-indigo-500">${escapeHtml(lead.niche || '')}</span>
+                        ${badges}
+                    </div>
+                </div>
+            </div>`;
+        const cb = label.querySelector('.lead-checkbox');
+        cb.checked = selectedLeads.has(lead.id);
+        toggleLeadHighlight(cb);
+        cb.addEventListener('change', () => {
+            cb.checked ? selectedLeads.set(lead.id, lead.business_name) : selectedLeads.delete(lead.id);
+            toggleLeadHighlight(cb);
+            updateLeadCounters();
+        });
+        return label;
+    }
+
+    async function loadLeads(reset = true) {
+        if (!leadsList) return;
+        leadPage = reset ? 1 : leadPage + 1;
+        leadController?.abort();
+        leadController = new AbortController();
+
+        try {
+            const response = await fetch(`${leadsFilterUrl}?${leadFilterParams({ page: leadPage, per_page: 30 })}`, {
+                headers: { 'Accept': 'application/json' },
+                signal: leadController.signal,
+            });
+            const data = await response.json();
+            if (reset) leadsList.innerHTML = '';
+
+            if (reset && data.leads.length === 0) {
+                leadsList.innerHTML = '<div class="text-center py-8 text-xs font-bold text-slate-400">Tidak ada lead yang cocok dengan filter.</div>';
+            }
+            data.leads.forEach(lead => leadsList.appendChild(renderLeadItem(lead)));
+
+            const shown = leadsList.querySelectorAll('.lead-item').length;
+            updateLeadCounters(shown, data.pagination.total, data.pagination.has_more);
+            if (selectAllCb) selectAllCb.checked = false;
+        } catch (e) {
+            if (e.name !== 'AbortError') console.error(e);
         }
     }
 
-    function applyLeadFilters() {
-        const query = (leadSearchInput?.value || '').trim().toLowerCase();
-        const selectedNiche = (leadNicheFilterInput?.value || '').trim().toLowerCase();
-        const selectedCity = (leadCityFilterInput?.value || '').trim().toLowerCase();
-        const onlyEmail = filterHasEmailBtn?.dataset.active === '1';
-        const onlyPhone = filterHasPhoneBtn?.dataset.active === '1';
-        const onlyWebsite = filterHasWebsiteBtn?.dataset.active === '1';
-
-        document.querySelectorAll('#leads-checkbox-list .lead-item').forEach(item => {
-            const text = item.textContent.toLowerCase();
-            const hasEmail = item.dataset.email === 'yes';
-            const hasPhone = item.dataset.phone === 'yes';
-            const hasWebsite = item.dataset.website === 'yes';
-            const itemNiche = (item.dataset.niche || '').toLowerCase();
-            const itemCity = (item.dataset.city || '').toLowerCase();
-
-            const matchSearch = !query || text.includes(query);
-            const matchNiche = !selectedNiche || itemNiche === selectedNiche;
-            const matchCity = !selectedCity || itemCity === selectedCity;
-            const matchEmail = !onlyEmail || hasEmail;
-            const matchPhone = !onlyPhone || hasPhone;
-            const matchWebsite = !onlyWebsite || hasWebsite;
-
-            item.classList.toggle('hidden', !(matchSearch && matchNiche && matchCity && matchEmail && matchPhone && matchWebsite));
+    // Ambil semua ID yang cocok dengan filter (maks. 500) lalu tambahkan ke pilihan
+    async function selectAllMatching(extra = {}) {
+        const response = await fetch(`${leadsFilterUrl}?${leadFilterParams({ ids_only: 1, ...extra })}`, { headers: { 'Accept': 'application/json' } });
+        const data = await response.json();
+        data.leads.forEach(lead => selectedLeads.set(lead.id, lead.business_name));
+        leadsList.querySelectorAll('.lead-checkbox').forEach(cb => {
+            cb.checked = selectedLeads.has(parseInt(cb.value));
+            toggleLeadHighlight(cb);
         });
+        updateLeadCounters();
+        return data;
     }
-    
+
+    const applyLeadFilters = () => loadLeads(true);
+
     // Initial templates fetch
     async function loadComposerTemplates() {
         try {
@@ -715,20 +767,6 @@
     }
 
     function updateSelectedNicheAndLocation() {
-        const campaignNiche = getSelectedCampaignNiche();
-        
-        // Dynamic visual filtering of leads list by campaign niche (optional detail!)
-        if (campaignNiche) {
-            document.querySelectorAll('#leads-checkbox-list .lead-item').forEach(item => {
-                const niche = item.getAttribute('data-niche');
-                if (niche.includes(campaignNiche) || campaignNiche.includes(niche)) {
-                    item.classList.add('border-indigo-500/10');
-                } else {
-                    item.classList.remove('border-indigo-500/10');
-                }
-            });
-        }
-        
         fetchComposerTemplates();
     }
 
@@ -742,7 +780,7 @@
         if (!templateOptionsContainer) return;
 
         templateOptionsContainer.innerHTML = `
-            <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" data-value="">Choose template...</div>
+            <div class="combobox-option px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition text-slate-700 dark:text-slate-300 font-medium" data-value="">Pilih template...</div>
         `;
 
         // Filter preloaded templates
@@ -793,96 +831,63 @@
 
     function toggleLeadHighlight(cb) {
         const row = cb.closest('.lead-item');
-        if (cb.checked) {
-            row.classList.add('bg-indigo-500/10', 'border-indigo-500/25', 'dark:bg-indigo-500/15');
-            row.classList.remove('border-slate-100', 'dark:border-slate-800/50');
-        } else {
-            row.classList.remove('bg-indigo-500/10', 'border-indigo-500/25', 'dark:bg-indigo-500/15');
-            row.classList.add('border-slate-100', 'dark:border-slate-800/50');
-        }
+        if (!row) return;
+        row.classList.toggle('bg-indigo-500/10', cb.checked);
+        row.classList.toggle('border-indigo-500/25', cb.checked);
+        row.classList.toggle('border-slate-100', !cb.checked);
     }
 
     if (selectAllCb) {
-        selectAllCb.addEventListener('change', function() {
-            getVisibleLeadItems().forEach(item => {
-                const cb = item.querySelector('.lead-checkbox');
-                if (!cb) return;
-                cb.checked = selectAllCb.checked;
-                toggleLeadHighlight(cb);
-            });
-        });
-    }
-
-    getLeadCheckboxes().forEach(cb => {
-        cb.addEventListener('change', () => toggleLeadHighlight(cb));
-    });
-
-    if (btnSmartSelect) {
-        btnSmartSelect.addEventListener('click', function() {
-            const channel = document.getElementById('composer_type').value;
-            let matchedCount = 0;
-            
-            getLeadCheckboxes().forEach(cb => {
-                const item = cb.closest('.lead-item');
-                if (!item || item.classList.contains('hidden')) return;
-                const hasEmail = item.dataset.email === 'yes';
-                const hasPhone = item.dataset.phone === 'yes';
-                
-                if (channel === 'email' && hasEmail) {
-                    cb.checked = true;
-                    matchedCount++;
-                } else if (channel === 'whatsapp' && hasPhone) {
-                    cb.checked = true;
-                    matchedCount++;
-                } else {
-                    cb.checked = false;
-                }
-                toggleLeadHighlight(cb);
-            });
-            
-            if (matchedCount > 0) {
-                window.showToast(`Auto-selected ${matchedCount} leads with active ${channel === 'whatsapp' ? 'Phones' : 'Emails'}.`, 'success');
+        selectAllCb.addEventListener('change', async function() {
+            if (selectAllCb.checked) {
+                const data = await selectAllMatching();
+                window.showToast(`${data.leads.length} lead hasil filter dipilih${data.truncated ? ' (dibatasi 500)' : ''}.`, 'success');
             } else {
-                window.showToast(`No leads found with active contacts.`, 'error');
+                leadsList.querySelectorAll('.lead-checkbox').forEach(cb => {
+                    cb.checked = false;
+                    selectedLeads.delete(parseInt(cb.value));
+                    toggleLeadHighlight(cb);
+                });
+                updateLeadCounters();
             }
         });
     }
 
-    if (leadSearchInput) {
-        leadSearchInput.addEventListener('input', debounce(applyLeadFilters, 250));
-    }
+    leadsLoadMoreBtn?.addEventListener('click', () => loadLeads(false));
+    leadsClearBtn?.addEventListener('click', () => {
+        selectedLeads.clear();
+        leadsList.querySelectorAll('.lead-checkbox').forEach(cb => { cb.checked = false; toggleLeadHighlight(cb); });
+        if (selectAllCb) selectAllCb.checked = false;
+        updateLeadCounters();
+    });
 
-    if (leadNicheFilterInput) {
-        leadNicheFilterInput.addEventListener('change', applyLeadFilters);
-    }
+    // Smart Select: pilih semua lead hasil filter yang punya kontak untuk channel terpilih
+    if (btnSmartSelect) {
+        btnSmartSelect.addEventListener('click', async function() {
+            const channel = document.getElementById('composer_type').value;
+            const data = await selectAllMatching(channel === 'whatsapp' ? { has_phone: 'yes' } : { has_email: 'yes' });
+            const contact = channel === 'whatsapp' ? 'nomor telepon' : 'email';
 
-    if (leadCityFilterInput) {
-        leadCityFilterInput.addEventListener('change', applyLeadFilters);
-    }
-
-    if (filterHasEmailBtn) {
-        filterHasEmailBtn.addEventListener('click', () => {
-            const active = filterHasEmailBtn.dataset.active !== '1';
-            setFilterButtonState(filterHasEmailBtn, active);
-            applyLeadFilters();
+            if (data.leads.length > 0) {
+                window.showToast(`${data.leads.length} lead dengan ${contact} dipilih.`, 'success');
+            } else {
+                window.showToast(`Tidak ada lead dengan ${contact} di filter ini.`, 'error');
+            }
         });
     }
 
-    if (filterHasPhoneBtn) {
-        filterHasPhoneBtn.addEventListener('click', () => {
-            const active = filterHasPhoneBtn.dataset.active !== '1';
-            setFilterButtonState(filterHasPhoneBtn, active);
-            applyLeadFilters();
-        });
-    }
+    leadSearchInput?.addEventListener('input', debounce(applyLeadFilters, 300));
+    leadNicheFilterInput?.addEventListener('change', applyLeadFilters);
+    leadCityFilterInput?.addEventListener('change', applyLeadFilters);
 
-    if (filterHasWebsiteBtn) {
-        filterHasWebsiteBtn.addEventListener('click', () => {
-            const active = filterHasWebsiteBtn.dataset.active !== '1';
-            setFilterButtonState(filterHasWebsiteBtn, active);
+    [filterHasEmailBtn, filterHasPhoneBtn, filterHasWebsiteBtn].forEach(btn => {
+        btn?.addEventListener('click', () => {
+            setFilterButtonState(btn, btn.dataset.active !== '1');
             applyLeadFilters();
         });
-    }
+    });
+
+    loadLeads(true);
 
     // Modal actions
     function openComposerPreviewModal() {
@@ -912,33 +917,31 @@
         const senderName = document.getElementById('composer_sender').value.trim();
 
         // Validate leads selection
-        const checkedLeads = Array.from(document.querySelectorAll('#leads-checkbox-list .lead-checkbox:checked'));
+        const checkedLeads = [...selectedLeads.entries()].map(([id, name]) => ({ id, name }));
         if (checkedLeads.length === 0) {
-            window.showToast('Please select at least 1 target lead!', 'error');
+            window.showToast('Pilih minimal 1 lead target!', 'error');
             return;
         }
 
         if (!campaignId) {
-            window.showToast('Please select a target campaign!', 'error');
+            window.showToast('Pilih campaign tujuan terlebih dahulu!', 'error');
             return;
         }
 
         if (mode !== 'ai' && !templateId) {
-            window.showToast('Please select an outreach template!', 'error');
+            window.showToast('Pilih template outreach terlebih dahulu!', 'error');
             return;
         }
 
         // Set mode label in footer
         let modeLabel = 'Hybrid';
-        if (mode === 'template') modeLabel = 'Master Template';
+        if (mode === 'template') modeLabel = 'Template';
         if (mode === 'ai') modeLabel = 'AI Generate';
         document.getElementById('composer-footer-mode-label').textContent = modeLabel;
 
         // Open modal and show skeleton loaders
         openComposerPreviewModal();
-        previewBody.innerHTML = checkedLeads.map(cb => {
-            const row = cb.closest('.lead-item');
-            const name = row.querySelector('.text-xs').textContent;
+        previewBody.innerHTML = checkedLeads.map(({ name }) => {
             return `
                 <div class="glass-card p-5 border border-slate-200 dark:border-slate-800 space-y-4">
                     <div class="flex justify-between items-center pb-2 border-b dark:border-slate-800">
@@ -953,7 +956,7 @@
             `;
         }).join('');
 
-        const leadIds = checkedLeads.map(cb => parseInt(cb.value));
+        const leadIds = checkedLeads.map(lead => lead.id);
 
         try {
             const response = await fetch('{{ route("outreach.compose.preview") }}', {
@@ -980,39 +983,45 @@
                 renderComposerPreviews(data.previews, type);
             } else {
                 closeComposerPreviewModal();
-                window.showToast(data.message || 'Error generating previews.', 'error');
+                window.showToast(data.message || 'Gagal membuat pratinjau.', 'error');
             }
         } catch (e) {
             closeComposerPreviewModal();
             console.error(e);
-            window.showToast('Network error while generating previews.', 'error');
+            window.showToast('Kesalahan jaringan saat membuat pratinjau.', 'error');
         }
     }
 
     function renderComposerPreviews(previews, type) {
         previewBody.innerHTML = previews.map(item => {
             return `
-                <div class="composer-lead-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-indigo-500/25 transition-all space-y-4" data-lead-id="${item.lead_id}">
+                <div class="composer-lead-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-indigo-500/25 transition-all space-y-4" data-lead-id="${item.lead_id}" data-variant="${escapeHtml(item.variant || '')}">
                     <div class="flex justify-between items-start border-b border-slate-100 dark:border-slate-800/80 pb-3">
                         <div>
                             <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100">${escapeHtml(item.business_name)}</h4>
-                            <p class="text-[10px] text-slate-400 mt-0.5"><svg class="w-3 h-3 align-[-2px] inline-block shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg> ${escapeHtml(item.city)} &bull; <span class="capitalize">${escapeHtml(item.niche)}</span> &bull; ${escapeHtml(item.email || item.phone || 'No Contact listed')}</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5"><svg class="w-3 h-3 align-[-2px] inline-block shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg> ${escapeHtml(item.city)} &bull; <span class="capitalize">${escapeHtml(item.niche)}</span> &bull; ${escapeHtml(item.email || item.phone || 'Tidak ada kontak')}</p>
                         </div>
                         <div class="flex gap-1.5 items-center">
-                            ${item.is_fallback ? `<span class="px-2 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/15 rounded inline-flex items-center gap-1" title="${escapeHtml(item.fallback_reason)}"><svg class="w-3 h-3 inline-block shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg> AI Fallback</span>` : ''}
+                            ${item.is_fallback ? `<span class="px-2 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/15 rounded inline-flex items-center gap-1" title="${escapeHtml(item.fallback_reason)}"><svg class="w-3 h-3 inline-block shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg> Cadangan (AI gagal)</span>` : ''}
                             <span class="px-2 py-0.5 text-[9px] font-bold rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/15 uppercase">${type}</span>
                         </div>
                     </div>
                     
+                    ${(item.problems || []).length ? `
+                    <div class="text-[11px] rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-700 dark:text-amber-400 px-3 py-2">
+                        <strong>Cek dulu sebelum disimpan:</strong> ${item.problems.map(escapeHtml).join(' · ')}
+                    </div>
+                    ` : ''}
+
                     ${type === 'email' ? `
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Subject Line</label>
-                        <input type="text" class="composer-subject-input form-input text-xs" value="${escapeHtml(item.subject || '')}" placeholder="Subject Line">
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Subjek</label>
+                        <input type="text" class="composer-subject-input form-input text-xs" value="${escapeHtml(item.subject || '')}" placeholder="Subjek email">
                     </div>
                     ` : ''}
                     
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Message Body</label>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Isi Pesan</label>
                         <textarea class="composer-message-textarea form-input text-xs font-sans leading-relaxed resize-y" rows="7">${escapeHtml(item.message)}</textarea>
                     </div>
 
@@ -1020,11 +1029,11 @@
                     <div class="bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-850/50 rounded-xl p-3 flex flex-col gap-2">
                         <label class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                            <span>Custom AI Polish for this Lead</span>
+                            <span>Poles dengan AI khusus untuk lead ini</span>
                         </label>
                         <div class="flex gap-2 items-center">
-                            <input type="text" class="composer-polish-prompt form-input text-2xs py-1" placeholder="e.g. 'Add a 15% discount promo', 'Make the CTA much shorter'">
-                            <button type="button" onclick="polishCardMessage(${item.lead_id}, this)" class="btn-primary py-1 px-3 text-[10px] shrink-0 font-bold">Polish</button>
+                            <input type="text" class="composer-polish-prompt form-input text-2xs py-1" placeholder="mis. 'Tambahkan promo diskon 15%', 'Buat ajakan penutupnya lebih singkat'">
+                            <button type="button" onclick="polishCardMessage(${item.lead_id}, this)" class="btn-primary py-1 px-3 text-[10px] shrink-0 font-bold">Poles</button>
                         </div>
                     </div>
                 </div>
@@ -1041,7 +1050,7 @@
 
         const customPrompt = promptInput.value.trim();
         if (!customPrompt) {
-            window.showToast('Please type a polish instruction first!', 'error');
+            window.showToast('Tulis instruksi poles terlebih dahulu!', 'error');
             return;
         }
 
@@ -1071,13 +1080,13 @@
             if (response.ok && data.status === 'success') {
                 messageTextarea.value = data.message;
                 promptInput.value = '';
-                window.showToast('AI polished successfully!', 'success');
+                window.showToast('Pesan berhasil dipoles AI!', 'success');
             } else {
-                window.showToast(data.message || 'Failed to polish message.', 'error');
+                window.showToast(data.message || 'Gagal memoles pesan.', 'error');
             }
         } catch(e) {
             console.error(e);
-            window.showToast('Network error while polishing.', 'error');
+            window.showToast('Kesalahan jaringan saat memoles pesan.', 'error');
         } finally {
             button.innerHTML = originalText;
             button.disabled = false;
@@ -1102,14 +1111,15 @@
             messages.push({
                 lead_id: leadId,
                 subject: subjectEl ? subjectEl.value : null,
-                message: messageEl.value
+                message: messageEl.value,
+                variant: card.dataset.variant || null
             });
         });
 
         if (messages.length === 0) return;
 
         const originalText = saveBtn.innerHTML;
-        saveBtn.innerHTML = 'Saving...';
+        saveBtn.innerHTML = 'Menyimpan...';
         saveBtn.disabled = true;
 
         try {
@@ -1137,11 +1147,11 @@
                 // Reload page data to reflect the newly saved outreach pipeline messages!
                 setTimeout(() => window.location.reload(), 1000);
             } else {
-                window.showToast(data.message || 'Failed to save pipeline.', 'error');
+                window.showToast(data.message || 'Gagal menyimpan ke pipeline.', 'error');
             }
         } catch (e) {
             console.error(e);
-            window.showToast('Network error while saving.', 'error');
+            window.showToast('Kesalahan jaringan saat menyimpan.', 'error');
         } finally {
             saveBtn.innerHTML = originalText;
             saveBtn.disabled = false;

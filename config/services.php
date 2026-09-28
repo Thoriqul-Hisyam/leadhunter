@@ -34,6 +34,19 @@ return [
         'model' => env('AI_MODEL') ?: 'llama-3.1-8b-instant',
         'timeout' => (int) env('AI_TIMEOUT', 120),
         'retries' => (int) env('AI_RETRIES', 2),
+        // Model cepat untuk klasifikasi balasan & smart matching (kosong = model utama)
+        'fast_model' => env('AI_FAST_MODEL'),
+        // Provider cadangan, dipakai otomatis saat provider utama gagal/timeout
+        'backup' => [
+            'base_url' => env('AI_BACKUP_BASE_URL') ? rtrim(env('AI_BACKUP_BASE_URL'), '/') : null,
+            'key' => env('AI_BACKUP_API_KEY'),
+            'model' => env('AI_BACKUP_MODEL'),
+        ],
+    ],
+
+    // Audit website lead (opsional; tanpa key tetap bisa dengan kuota kecil)
+    'pagespeed' => [
+        'key' => env('PAGESPEED_API_KEY'),
     ],
 
     'google_places' => [

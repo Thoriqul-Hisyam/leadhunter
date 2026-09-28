@@ -30,6 +30,21 @@ class Phone
         return strlen($digits) >= 9 && strlen($digits) <= 15 ? $digits : null;
     }
 
+    /**
+     * True untuk nomor seluler Indonesia (62 8xx). Nomor kantor seperti (031) 5964600 → false.
+     * Catatan: WhatsApp Business bisa didaftarkan di nomor kantor, jadi false berarti "belum tentu WA",
+     * bukan "pasti bukan WA". Pengiriman otomatis hanya ke nomor seluler kecuali diizinkan di Pengaturan.
+     */
+    public static function isMobile(?string $phone): bool
+    {
+        $number = static::toWhatsApp($phone);
+
+        return $number !== null
+            && str_starts_with($number, '628')
+            && strlen($number) >= 10
+            && strlen($number) <= 14;
+    }
+
     public static function whatsAppUrl(?string $phone, string $message = ''): ?string
     {
         $number = static::toWhatsApp($phone);

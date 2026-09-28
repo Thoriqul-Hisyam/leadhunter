@@ -20,6 +20,7 @@ class ScrapeGoogleMapsJob implements ShouldQueue
 
     public $niche;
     public $location;
+    public $userId;
 
     /**
      * Scraping tidak di-retry otomatis: percobaan ulang akan membuka Google Maps dari awal.
@@ -33,10 +34,11 @@ class ScrapeGoogleMapsJob implements ShouldQueue
 
     public $failOnTimeout = true;
 
-    public function __construct($niche, $location)
+    public function __construct($niche, $location, ?int $userId = null)
     {
         $this->niche = $niche;
         $this->location = $location;
+        $this->userId = $userId;
         $this->onQueue('scraping');
     }
 
@@ -44,7 +46,7 @@ class ScrapeGoogleMapsJob implements ShouldQueue
     {
         Log::info("Starting background scrape for {$this->niche} in {$this->location}");
 
-        $stats = $scraper->scrape($this->niche, $this->location);
+        $stats = $scraper->scrape($this->niche, $this->location, $this->userId);
 
         Log::info('Background scrape completed.', $stats);
 

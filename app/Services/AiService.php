@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Exceptions\AiException;
+use App\Helpers\Url;
+use App\Models\AiUsageLog;
 use App\Models\Lead;
 use App\Models\OutreachMessage;
 use App\Models\Setting;
@@ -20,28 +22,55 @@ use Illuminate\Support\Str;
  */
 class AiService
 {
-    protected ?string $apiKey;
-    protected string $baseUrl;
-    protected string $model;
+    /** Fitur yang cukup memakai model cepat (jawaban pendek, tidak perlu kualitas tulisan). */
+    public const FAST_FEATURES = ['classify', 'match'];
+
     protected int $timeout;
     protected int $retries;
 
+    /** @var array<int, array{name: string, base_url: string, key: string, model: string}> */
+    protected array $providers = [];
+
+    protected ?string $fastModel;
+
     public function __construct()
     {
-        $this->apiKey = config('services.ai.key') ?: null;
-        $this->baseUrl = rtrim((string) config('services.ai.base_url'), '/');
-        $this->model = (string) config('services.ai.model');
         $this->timeout = (int) config('services.ai.timeout', 120);
         $this->retries = (int) config('services.ai.retries', 2);
+        $this->fastModel = config('services.ai.fast_model') ?: null;
+
+        $candidates = [
+            ['name' => 'primary'] + (array) config('services.ai'),
+            ['name' => 'backup'] + (array) config('services.ai.backup', []),
+        ];
+
+        foreach ($candidates as $provider) {
+            if (! empty($provider['key']) && ! empty($provider['base_url']) && ! empty($provider['model'])) {
+                $this->providers[] = [
+                    'name' => $provider['name'],
+                    'base_url' => rtrim((string) $provider['base_url'], '/'),
+                    'key' => (string) $provider['key'],
+                    'model' => (string) $provider['model'],
+                ];
+            }
+        }
     }
 
     public function isConfigured(): bool
     {
-        return ! empty($this->apiKey);
+        return $this->providers !== [];
+    }
+
+    public function hasBackup(): bool
+    {
+        return count($this->providers) > 1;
     }
 
     /**
-     * Kirim prompt ke LLM dan kembalikan teks jawabannya.
+     * Kirim prompt ke LLM dan kembalikan teks jawabannya. Jika provider utama gagal
+     * (timeout, error server, rate limit), provider cadangan dicoba otomatis.
+     *
+     * @param  array  $options  feature, system, temperature, max_tokens
      *
      * @throws AiException
      */
@@ -49,26 +78,45 @@ class AiService
     {
         $this->ensureConfigured();
 
-        try {
-            $response = $this->request()
-                ->retry(
-                    $this->retries + 1,
-                    fn (int $attempt) => $attempt * 2000,
-                    fn ($exception) => $exception instanceof ConnectionException
-                        || ($exception instanceof RequestException && in_array($exception->response->status(), [429, 500, 502, 503, 504])),
-                    throw: false
-                )
-                ->post($this->endpoint(), $this->payload($prompt, $options));
-        } catch (ConnectionException $e) {
-            throw new AiException('Tidak bisa terhubung ke AI API: '.$e->getMessage(), 0, $e);
+        $feature = $options['feature'] ?? 'other';
+        $last = null;
+
+        foreach ($this->providers as $provider) {
+            $model = $this->modelFor($provider, $feature);
+            $started = hrtime(true);
+
+            try {
+                $response = $this->request($provider)
+                    ->retry(
+                        $this->retries + 1,
+                        fn (int $attempt) => $attempt * 2000,
+                        fn ($exception) => $exception instanceof ConnectionException
+                            || ($exception instanceof RequestException && in_array($exception->response->status(), [429, 500, 502, 503, 504])),
+                        throw: false
+                    )
+                    ->post($this->endpoint($provider), $this->payload($prompt, $options, $model));
+
+                $content = $this->extractContent($response);
+                $this->log($feature, $provider, $model, $started, $response);
+
+                return $content;
+            } catch (ConnectionException $e) {
+                $last = new AiException('Tidak bisa terhubung ke AI API: '.$e->getMessage(), 0, $e);
+            } catch (AiException $e) {
+                $last = $e;
+            }
+
+            $this->log($feature, $provider, $model, $started, $response ?? null, $last->getMessage());
+            unset($response);
         }
 
-        return $this->extractContent($response);
+        throw $last;
     }
 
     /**
      * Kirim banyak prompt sekaligus secara paralel (dipakai preview composer, supaya
-     * 10 lead tidak butuh 10x waktu satu panggilan AI).
+     * 10 lead tidak butuh 10x waktu satu panggilan AI). Prompt yang gagal di provider
+     * utama diulang sekali lewat provider cadangan.
      *
      * @param  array<string|int, string>  $prompts
      * @return array<string|int, string|AiException> teks jawaban, atau exception per prompt yang gagal
@@ -79,23 +127,51 @@ class AiService
             return array_map(fn () => $this->notConfiguredException(), $prompts);
         }
 
-        $keys = array_keys($prompts);
+        $results = [];
+        $pending = $prompts;
 
-        $responses = Http::pool(function (Pool $pool) use ($prompts, $options) {
+        foreach ($this->providers as $provider) {
+            if ($pending === []) {
+                break;
+            }
+
+            foreach ($this->pool($provider, $pending, $options, $concurrency) as $key => $result) {
+                $results[$key] = $result;
+
+                if (is_string($result)) {
+                    unset($pending[$key]);
+                }
+            }
+        }
+
+        // Urutan hasil mengikuti urutan prompt
+        return array_replace(array_fill_keys(array_keys($prompts), null), $results);
+    }
+
+    /**
+     * @return array<string|int, string|AiException>
+     */
+    protected function pool(array $provider, array $prompts, array $options, int $concurrency): array
+    {
+        $feature = $options['feature'] ?? 'other';
+        $model = $this->modelFor($provider, $feature);
+        $started = hrtime(true);
+
+        $responses = Http::pool(function (Pool $pool) use ($prompts, $options, $provider, $model) {
             $requests = [];
             foreach ($prompts as $key => $prompt) {
                 $requests[] = $pool->as((string) $key)
-                    ->withToken($this->apiKey)
+                    ->withToken($provider['key'])
                     ->acceptJson()
                     ->timeout($this->timeout)
-                    ->post($this->endpoint(), $this->payload($prompt, $options));
+                    ->post($this->endpoint($provider), $this->payload($prompt, $options, $model));
             }
 
             return $requests;
         }, $concurrency);
 
         $results = [];
-        foreach ($keys as $key) {
+        foreach (array_keys($prompts) as $key) {
             $response = $responses[(string) $key] ?? null;
 
             try {
@@ -104,12 +180,38 @@ class AiService
                 }
 
                 $results[$key] = $this->extractContent($response);
+                $this->log($feature, $provider, $model, $started, $response);
             } catch (AiException $e) {
                 $results[$key] = $e;
+                $this->log($feature, $provider, $model, $started, $response instanceof Response ? $response : null, $e->getMessage());
             }
         }
 
         return $results;
+    }
+
+    protected function modelFor(array $provider, string $feature): string
+    {
+        return $provider['name'] === 'primary' && $this->fastModel && in_array($feature, self::FAST_FEATURES, true)
+            ? $this->fastModel
+            : $provider['model'];
+    }
+
+    protected function log(string $feature, array $provider, string $model, int $started, ?Response $response, ?string $error = null): void
+    {
+        $usage = $response?->json('usage');
+
+        AiUsageLog::record([
+            'feature' => array_key_exists($feature, AiUsageLog::FEATURES) ? $feature : 'other',
+            'provider' => $provider['name'],
+            'model' => mb_substr($model, 0, 150),
+            'duration_ms' => (int) round((hrtime(true) - $started) / 1_000_000),
+            'prompt_tokens' => is_array($usage) ? ($usage['prompt_tokens'] ?? null) : null,
+            'completion_tokens' => is_array($usage) ? ($usage['completion_tokens'] ?? null) : null,
+            'total_tokens' => is_array($usage) ? ($usage['total_tokens'] ?? null) : null,
+            'success' => $error === null,
+            'error' => $error ? mb_substr($error, 0, 500) : null,
+        ]);
     }
 
     protected function ensureConfigured(): void
@@ -121,23 +223,23 @@ class AiService
 
     protected function notConfiguredException(): AiException
     {
-        return new AiException('AI belum dikonfigurasi. Isi AI_API_KEY (serta AI_BASE_URL dan AI_MODEL) di file .env.');
+        return new AiException('AI belum dikonfigurasi. Isi Base URL, API key (AI_API_KEY), dan model di Pengaturan → Koneksi.');
     }
 
-    protected function endpoint(): string
+    protected function endpoint(array $provider): string
     {
-        return $this->baseUrl.'/chat/completions';
+        return $provider['base_url'].'/chat/completions';
     }
 
-    protected function request(): PendingRequest
+    protected function request(array $provider): PendingRequest
     {
-        return Http::withToken($this->apiKey)->acceptJson()->timeout($this->timeout);
+        return Http::withToken($provider['key'])->acceptJson()->timeout($this->timeout);
     }
 
-    protected function payload(string $prompt, array $options = []): array
+    protected function payload(string $prompt, array $options, string $model): array
     {
         return [
-            'model' => $this->model,
+            'model' => $model,
             'stream' => false,
             'messages' => [
                 ['role' => 'system', 'content' => $options['system'] ?? 'Anda adalah copywriter B2B berpengalaman untuk pasar Indonesia. Tulisan Anda singkat, natural, personal, dan tidak terdengar seperti spam.'],
@@ -180,14 +282,64 @@ class AiService
     /**
      * Generate pesan outreach baru untuk satu lead.
      *
-     * @param  array  $context  offer, sender, website, tone (formal|casual|friendly), language (id|en), instruction
-     * @return array{subject: ?string, message: string}
+     * Hasil yang tidak lolos quality gate ditulis ulang sekali; jika masih bermasalah, ditandai perlu review.
+     *
+     * @param  array  $context  offer, sender, website, tone (formal|casual|friendly), language (id|en), instruction, variant
+     * @return array{subject: ?string, message: string, needs_review: bool, problems: array<int, string>, variant: string}
      */
     public function generateOutreach(Lead $lead, string $channel, array $context = []): array
     {
-        $raw = $this->generateText($this->outreachPrompt($lead, $channel, $context), ['temperature' => 0.8]);
+        $context['variant'] = $this->variantFor($lead, $context);
+        $prompt = $this->outreachPrompt($lead, $channel, $context);
+        $options = ['temperature' => 0.8, 'feature' => 'outreach'];
+        $gate = app(MessageQualityGate::class);
 
-        return $this->parseOutreach($raw, $lead, $channel, $context);
+        $result = $this->parseOutreach($this->generateText($prompt, $options), $lead, $channel, $context);
+        $problems = $gate->problems($result['message'], $result['subject'], $lead, $channel);
+
+        if ($problems) {
+            try {
+                $retry = $this->parseOutreach($this->generateText(
+                    $prompt."\n\nTulisan sebelumnya ditolak karena: ".implode('; ', $problems).'. Tulis ulang dari awal dan hindari masalah tersebut.',
+                    $options
+                ), $lead, $channel, $context);
+                $retryProblems = $gate->problems($retry['message'], $retry['subject'], $lead, $channel);
+
+                if (count($retryProblems) <= count($problems)) {
+                    [$result, $problems] = [$retry, $retryProblems];
+                }
+            } catch (AiException $e) {
+                report($e); // hasil pertama tetap dipakai, ditandai perlu review
+            }
+        }
+
+        return $result + ['needs_review' => $problems !== [], 'problems' => $problems, 'variant' => $context['variant']];
+    }
+
+    /**
+     * Varian gaya pembuka pesan, diukur reply rate-nya di dashboard.
+     */
+    public const PROMPT_VARIANTS = [
+        'observasi' => 'Buka dengan pengamatan',
+        'pertanyaan' => 'Buka dengan pertanyaan',
+    ];
+
+    /**
+     * Varian untuk lead ini: dari konteks, atau dibagi rata berdasarkan ID lead (A/B yang stabil).
+     */
+    public function variantFor(Lead $lead, array $context = []): string
+    {
+        if (isset($context['variant']) && array_key_exists($context['variant'], self::PROMPT_VARIANTS)) {
+            return $context['variant'];
+        }
+
+        if (Setting::get('ai_prompt_variants') !== '1') {
+            return 'observasi';
+        }
+
+        $variants = array_keys(self::PROMPT_VARIANTS);
+
+        return $variants[(int) $lead->id % count($variants)];
     }
 
     /**
@@ -235,7 +387,9 @@ class AiService
             ."Cara menulis:\n"
             ."- Tulis seperti orang sungguhan yang menulis pesan ini khusus untuk mereka, bukan template massal. Nada {$ctx['tone_label']}.\n"
             ."- Panjang isi {$length}.\n"
-            ."- Buka dengan sapaan singkat ({$ctx['greeting']}), lalu satu kalimat yang relevan dengan bisnis mereka dan langsung ke alasan menghubungi.\n"
+            ."- Buka dengan sapaan singkat ({$ctx['greeting']}), ".($this->variantFor($lead, $context) === 'pertanyaan'
+                ? 'lalu satu pertanyaan singkat tentang cara calon pelanggan menemukan atau menghubungi mereka, lalu langsung ke alasan menghubungi.'
+                : 'lalu satu pengamatan spesifik tentang bisnis mereka (dari yang diketahui di atas) dan langsung ke alasan menghubungi.')."\n"
             ."- Sampaikan satu manfaat konkret untuk bisnis mereka, bukan daftar fitur.\n"
             ."- Tutup dengan satu pertanyaan ringan yang mudah dijawab ya/tidak, misalnya menawarkan contoh tampilan atau gambaran singkat. Jangan langsung meminta meeting.\n"
             ."- Jangan menyebut angka rating, jumlah ulasan, alamat, atau URL website mereka.\n"
@@ -291,7 +445,7 @@ class AiService
             $prompt .= "\n\nInstruksi tambahan dari pengguna (prioritaskan):\n{$ctx['instruction']}";
         }
 
-        $raw = preg_replace('/^\s*(berikut( ini)?( adalah| merupakan)?|here is|here\'s)[^\n]*:\s*\n+/iu', '', $this->generateText($prompt, ['temperature' => 0.8]));
+        $raw = preg_replace('/^\s*(berikut( ini)?( adalah| merupakan)?|here is|here\'s)[^\n]*:\s*\n+/iu', '', $this->generateText($prompt, ['temperature' => 0.8, 'feature' => 'template']));
 
         $subject = null;
         if (preg_match('/^\s*\**(?:subjek|subject)\**\s*:\s*(.+?)\s*(?:\n|$)/iu', $raw, $m)) {
@@ -330,19 +484,27 @@ class AiService
                 ."tanpa meremehkan {$platform} mereka.";
         }
 
+        // Hasil audit website (PageSpeed) memberi fakta nyata untuk dibahas.
+        $findings = [];
+        if ($lead->website_score !== null && $lead->website_score < 50) {
+            $findings[] = 'website mereka terbuka lambat di HP menurut pengecekan Google PageSpeed';
+        }
+        if ($lead->website_https === false) {
+            $findings[] = 'website mereka belum memakai HTTPS sehingga browser bisa menampilkan peringatan "Tidak aman"';
+        }
+
+        if ($findings) {
+            return 'Mereka sudah punya website, dan dari pengecekan singkat: '.implode('; ', $findings).'. '
+                .'Sebutkan temuan ini dengan sopan sebagai hasil pengecekan cepat (tanpa angka skor), lalu tawarkan perbaikannya. Jangan terdengar menggurui.';
+        }
+
         return 'Mereka sudah punya website. Jangan menyiratkan websitenya buruk dan jangan mengaku sudah menilainya. '
             .'Tawarkan bantuan yang spesifik, misalnya tampilan mobile yang lebih cepat, halaman layanan yang lebih jelas, atau booking online, sebagai tawaran, bukan kritik.';
     }
 
-    protected function socialPlatform(string $url): ?string
+    protected function socialPlatform(?string $url): ?string
     {
-        foreach (['instagram.com' => 'Instagram', 'facebook.com' => 'Facebook', 'tiktok.com' => 'TikTok', 'linktr.ee' => 'Linktree', 'wa.me' => 'WhatsApp', 'shopee' => 'Shopee', 'tokopedia' => 'Tokopedia'] as $domain => $name) {
-            if (str_contains(strtolower($url), $domain)) {
-                return $name;
-            }
-        }
-
-        return null;
+        return Url::socialPlatform($url);
     }
 
     /**
@@ -406,7 +568,7 @@ class AiService
      */
     public function polishDraft(Lead $lead, string $draft, array $context = []): string
     {
-        return $this->cleanMessage($this->generateText($this->polishDraftPrompt($lead, $draft, $context)));
+        return $this->cleanMessage($this->generateText($this->polishDraftPrompt($lead, $draft, $context), ['feature' => 'polish']));
     }
 
     public function polishDraftPrompt(Lead $lead, string $draft, array $context = []): string
@@ -434,28 +596,75 @@ class AiService
             ."Ubah draf di atas sesuai instruksi ini:\n\"{$instruction}\"\n\n"
             ."Aturan: kembalikan HANYA isi pesan hasil revisi, tanpa markdown, tanpa kalimat pengantar atau penjelasan. Pertahankan nama pengirim dan call to action yang penting.";
 
-        return $this->cleanMessage($this->generateText($prompt));
+        return $this->cleanMessage($this->generateText($prompt, ['feature' => 'polish']));
     }
 
     /**
      * Pesan follow-up singkat untuk lead yang belum membalas.
      */
-    public function generateFollowup(Lead $lead, OutreachMessage $original, array $context = []): string
+    /**
+     * Follow-up / langkah sequence berikutnya. Kanal boleh berbeda dari pesan sebelumnya
+     * (mis. email lalu WhatsApp); $final = pesan penutup sequence.
+     */
+    public function generateFollowup(Lead $lead, OutreachMessage $original, array $context = [], ?string $channel = null, bool $final = false): string
     {
         $ctx = $this->context($context);
+        $channel ??= $original->type;
         $days = $original->sent_at ? max(1, (int) $original->sent_at->diffInDays(now())) : null;
-        $channelLabel = $original->type === 'whatsapp' ? 'pesan WhatsApp' : 'email';
+        $label = fn (string $type) => $type === 'whatsapp' ? 'pesan WhatsApp' : 'email';
+        $previous = $label($original->type).' sebelumnya'.($channel !== $original->type ? ' (dikirim lewat '.$label($original->type).')' : '');
 
-        $prompt = "Tulis {$channelLabel} follow-up yang sangat singkat (2–3 kalimat, di bawah 50 kata) dalam {$ctx['language_label']} untuk {$lead->displayName()}"
-            .($days ? ", karena pesan pertama {$days} hari lalu belum dibalas" : ', karena pesan pertama belum dibalas').".\n\n"
-            ."Pesan pertama:\n\"\"\"\n{$this->stripSignature($original->message)}\n\"\"\"\n\n"
-            ."Aturan: sapaan singkat ({$ctx['greeting']}), sopan, tidak memaksa, tidak menyalahkan, tidak mengulang isi pesan pertama. "
-            ."Ingatkan penawaran dalam satu kalimat, lalu satu pertanyaan ya/tidak yang mudah dijawab. "
+        $prompt = "Tulis {$label($channel)} follow-up yang sangat singkat (2–3 kalimat, di bawah 50 kata) dalam {$ctx['language_label']} untuk {$lead->displayName()}"
+            .($days ? ", karena {$previous} {$days} hari lalu belum dibalas" : ", karena {$previous} belum dibalas").".\n\n"
+            ."Pesan sebelumnya:\n\"\"\"\n{$this->stripSignature($original->message)}\n\"\"\"\n\n"
+            ."Aturan: sapaan singkat ({$ctx['greeting']}), sopan, tidak memaksa, tidak menyalahkan, tidak mengulang isi pesan sebelumnya. "
+            .($final
+                ? 'Ini pesan terakhir: sampaikan bahwa Anda tidak akan mengganggu lagi, dan pintu tetap terbuka jika suatu saat mereka butuh bantuan soal website. Tanpa pertanyaan yang mendesak. '
+                : 'Ingatkan penawaran dalam satu kalimat, lalu satu pertanyaan ya/tidak yang mudah dijawab. ')
+            .($channel !== $original->type ? 'Sebutkan singkat bahwa Anda sempat mengirim '.$label($original->type).'. ' : '')
             .'Jangan menulis salam penutup atau tanda tangan (ditambahkan otomatis). Tanpa markdown, tanpa subjek, tanpa kalimat pengantar, tanpa tanda seru.';
 
-        $body = $this->stripSignature($this->cleanMessage($this->generateText($prompt, ['temperature' => 0.8])), $context);
+        $body = $this->stripSignature($this->cleanMessage($this->generateText($prompt, ['temperature' => 0.8, 'feature' => 'followup'])), $context);
 
-        return $body."\n\n".$this->signature($original->type, $context);
+        return $body."\n\n".$this->signature($channel, $context);
+    }
+
+    /**
+     * Klasifikasi balasan calon klien. Mengembalikan salah satu kunci OutreachMessage::REPLY_CATEGORIES.
+     *
+     * @throws AiException
+     */
+    public function classifyReply(string $text, ?string $subject = null): string
+    {
+        $categories = array_keys(OutreachMessage::REPLY_CATEGORIES);
+
+        $prompt = "Klasifikasikan balasan calon klien atas pesan penawaran jasa pembuatan website.\n"
+            ."Kategori:\n"
+            ."- interested: tertarik, ingin tahu lebih lanjut, minta contoh/portofolio, minta dihubungi atau diajak diskusi\n"
+            ."- pricing: menanyakan harga, biaya, paket, atau budget\n"
+            ."- not_interested: menolak, tidak butuh, sudah punya/sudah ada vendor\n"
+            ."- auto_reply: balasan otomatis, out of office, menu bot, sapaan otomatis WhatsApp Business\n"
+            ."- other: selain di atas\n\n"
+            .($subject ? "Subjek: {$subject}\n" : '')
+            ."Balasan:\n\"\"\"\n".mb_substr($text, 0, 1500)."\n\"\"\"\n\n"
+            .'Jawab HANYA dengan satu kata kategori: '.implode(', ', $categories).'.';
+
+        $answer = strtolower($this->generateText($prompt, [
+            'feature' => 'classify',
+            'temperature' => 0,
+            'max_tokens' => 200,
+            'system' => 'Anda mengklasifikasikan balasan pesan bisnis dengan tepat dan hanya menjawab dengan nama kategori.',
+        ]));
+
+        // Cocokkan kategori terpanjang dulu ("not_interested" mengandung "interested").
+        usort($categories, fn ($a, $b) => strlen($b) <=> strlen($a));
+        foreach ($categories as $category) {
+            if (str_contains($answer, $category)) {
+                return $category;
+            }
+        }
+
+        throw new AiException('Jawaban klasifikasi AI tidak dikenali: '.mb_strimwidth($answer, 0, 80, '…'));
     }
 
     /*
@@ -479,7 +688,7 @@ class AiService
             ."Jawab HANYA dengan JSON mentah berbentuk {\"ids\":[1,3,5]} tanpa markdown atau teks lain.\n\n"
             ."Kandidat:\n".json_encode($candidates, JSON_UNESCAPED_UNICODE);
 
-        $response = $this->generateText($prompt, ['temperature' => 0.1]);
+        $response = $this->generateText($prompt, ['temperature' => 0.1, 'feature' => 'match']);
 
         $json = preg_match('/\{.*\}/s', $response, $m) ? $m[0] : $response;
         $data = json_decode($json, true);
@@ -533,6 +742,8 @@ class AiService
             $lines[] = '- Website: belum punya';
         } elseif ($platform = $this->socialPlatform($lead->website)) {
             $lines[] = "- Website: belum punya sendiri, memakai {$platform}";
+        } elseif ($lead->website_score !== null && $lead->website_score < 50) {
+            $lines[] = '- Website: sudah punya, tapi terbuka lambat di HP';
         } else {
             $lines[] = '- Website: sudah punya';
         }

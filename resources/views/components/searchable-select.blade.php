@@ -2,7 +2,7 @@
     'name' => '',
     'id' => '',
     'inputId' => '',
-    'placeholder' => 'Select an option',
+    'placeholder' => 'Pilih opsi',
     'options' => [], // Array or collection of key-value pairs or array items
     'selected' => '',
     'required' => false,
@@ -65,7 +65,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
             </span>
-            <input type="text" class="combobox-search w-full pl-7 pr-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200" placeholder="Search...">
+            <input type="text" class="combobox-search w-full pl-7 pr-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500 transition text-slate-700 dark:text-slate-200" placeholder="Cari...">
         </div>
         <div class="combobox-options max-h-48 overflow-y-auto space-y-1">
             @if(!$required)

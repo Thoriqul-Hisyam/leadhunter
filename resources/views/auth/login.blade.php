@@ -108,6 +108,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
                         <label for="password" class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Password</label>
+                        <a href="{{ route('password.request') }}" class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Lupa password?</a>
                     </div>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">

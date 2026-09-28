@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Kirim satu email dari antrean. Retry diatur oleh scheduler (OutreachSender::retryFailed),
+ * Kirim satu pesan (email atau WhatsApp) dari antrean. Retry diatur oleh scheduler (OutreachSender::retryFailed),
  * bukan oleh queue, agar tetap mematuhi batas kirim per jam.
  */
 class SendOutreachJob implements ShouldQueue
@@ -38,7 +38,7 @@ class SendOutreachJob implements ShouldQueue
         }
 
         try {
-            $sender->sendEmail($message);
+            $sender->send($message);
         } catch (OutreachSendException $e) {
             Log::warning("Outreach #{$message->id} gagal dikirim: {$e->getMessage()}");
         }

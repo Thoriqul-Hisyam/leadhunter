@@ -34,6 +34,22 @@ class Url
     }
 
     /**
+     * Nama platform jika "website" lead sebenarnya akun media sosial / marketplace, mis. "Instagram".
+     */
+    public static function socialPlatform(?string $url): ?string
+    {
+        $url = strtolower((string) $url);
+
+        foreach (['instagram.com' => 'Instagram', 'facebook.com' => 'Facebook', 'fb.com' => 'Facebook', 'tiktok.com' => 'TikTok', 'linktr.ee' => 'Linktree', 'wa.me' => 'WhatsApp', 'shopee' => 'Shopee', 'tokopedia' => 'Tokopedia'] as $domain => $name) {
+            if ($url !== '' && str_contains($url, $domain)) {
+                return $name;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * True jika URL memakai http/https dan host-nya me-resolve ke IP publik.
      * Dipakai sebelum crawler membuka URL milik pihak luar (mencegah SSRF ke jaringan internal).
      */

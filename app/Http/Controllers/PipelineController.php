@@ -14,8 +14,9 @@ class PipelineController extends Controller
     {
         $stages = Lead::STAGES;
         $perStage = 50;
+        $filters = $request->only(['search', 'niche', 'city']);
 
-        $base = Lead::query()->filter($request->only(['search', 'niche', 'city']));
+        $base = Lead::query()->filter($filters);
 
         $counts = (clone $base)->selectRaw('pipeline_stage, COUNT(*) as total')
             ->groupBy('pipeline_stage')
@@ -35,6 +36,16 @@ class PipelineController extends Controller
             ];
         }
 
-        return view('pipeline.index', compact('columns', 'stages', 'perStage'));
+        $totalFound = array_sum(array_column($columns, 'total'));
+
+        // Pencarian langsung: hanya papan yang dirender ulang
+        if ($request->boolean('partial')) {
+            return view('pipeline.partials.board', compact('columns', 'stages', 'perStage', 'totalFound', 'filters'));
+        }
+
+        $niches = Lead::whereNotNull('niche')->where('niche', '!=', '')->distinct()->orderBy('niche')->pluck('niche');
+        $cities = Lead::whereNotNull('city')->where('city', '!=', '')->distinct()->orderBy('city')->pluck('city');
+
+        return view('pipeline.index', compact('columns', 'stages', 'perStage', 'totalFound', 'filters', 'niches', 'cities'));
     }
 }

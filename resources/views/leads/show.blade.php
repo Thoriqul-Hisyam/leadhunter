@@ -62,6 +62,9 @@
                     <dd class="text-slate-700 dark:text-slate-200">
                         @if($lead->phone)
                             {{ $lead->phone }}
+                            @unless($lead->phone_is_mobile)
+                                <span class="text-[10px] font-semibold text-amber-600 dark:text-amber-400" title="Nomor telepon kantor biasanya tidak terdaftar di WhatsApp">(nomor kantor)</span>
+                            @endunless
                             @if($wa = \App\Helpers\Phone::whatsAppUrl($lead->phone))
                                 · <a href="{{ $wa }}" target="_blank" rel="noopener" class="text-emerald-600 dark:text-emerald-400 hover:underline">Buka WhatsApp</a>
                             @endif
@@ -75,6 +78,25 @@
                     </dd>
                 </div>
                 <div>
+                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Skor prioritas</dt>
+                    <dd class="flex items-start justify-between gap-2">
+                        <div>@include('leads.partials.score-badge')</div>
+                        @if($lead->website && ! \App\Helpers\Url::socialPlatform($lead->website))
+                            <form action="{{ route('leads.bulk') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="action" value="audit">
+                                <input type="hidden" name="lead_ids[]" value="{{ $lead->id }}">
+                                <button type="submit" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline" title="Cek kecepatan mobile & HTTPS lewat Google PageSpeed (berjalan di antrean)">
+                                    {{ $lead->website_audited_at ? 'Audit ulang' : 'Audit website' }}
+                                </button>
+                            </form>
+                        @endif
+                    </dd>
+                    @if($lead->website_audited_at)
+                        <p class="text-[10px] text-slate-400 mt-1">Diaudit {{ $lead->website_audited_at->diffForHumans() }}</p>
+                    @endif
+                </div>
+                <div>
                     <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Alamat</dt>
                     <dd class="text-slate-700 dark:text-slate-200">{{ $lead->address ?: '—' }}</dd>
                 </div>
@@ -86,7 +108,7 @@
                 @endif
                 <div>
                     <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sumber</dt>
-                    <dd class="text-slate-700 dark:text-slate-200">{{ $lead->source }} · ditambahkan {{ $lead->created_at->format('d M Y') }}</dd>
+                    <dd class="text-slate-700 dark:text-slate-200">{{ $lead->source }} · ditambahkan {{ $lead->created_at->translatedFormat('d M Y') }}</dd>
                 </div>
             </dl>
         </div>
@@ -114,7 +136,7 @@
                                 <button type="submit" class="text-[10px] text-slate-400 hover:text-rose-500 font-semibold">Hapus</button>
                             </form>
                         </div>
-                        <div class="text-[10px] text-slate-400 mt-1.5">{{ $note->user?->name ?? 'Sistem' }} · {{ $note->created_at->format('d M Y H:i') }}</div>
+                        <div class="text-[10px] text-slate-400 mt-1.5">{{ $note->user?->name ?? 'Sistem' }} · {{ $note->created_at->translatedFormat('d M Y H:i') }}</div>
                     </div>
                 @empty
                     <p class="text-xs text-slate-400">Belum ada catatan.</p>
@@ -144,17 +166,21 @@
                                 @if($msg->campaign)
                                     <a href="{{ route('campaigns.show', $msg->campaign) }}" class="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">{{ $msg->campaign->name }}</a>
                                 @endif
-                                @if($msg->followup_of_id)<div class="text-[9px] font-bold text-sky-600 inline-flex items-center gap-1"><x-icon name="reply" class="w-3 h-3" /> Follow-up</div>@endif
+                                @if($msg->isSequenceStep())<div class="text-[9px] font-bold text-sky-600 inline-flex items-center gap-1"><x-icon name="reply" class="w-3 h-3" /> Follow-up · langkah {{ $msg->step }}</div>@endif
                             </td>
                             <td class="text-xs">{{ $msg->type === 'whatsapp' ? 'WhatsApp' : 'Email' }}</td>
                             <td class="text-xs">
                                 @if($msg->subject)<div class="font-bold text-slate-800 dark:text-slate-100 mb-1">{{ $msg->subject }}</div>@endif
                                 <div class="text-slate-600 dark:text-slate-300 line-clamp-3 whitespace-pre-wrap">{{ $msg->message }}</div>
                             </td>
-                            <td><span class="badge badge-{{ $msg->status }} px-2.5 py-1 text-[10px]">{{ ucfirst($msg->status) }}</span></td>
+                            <td>
+                                <span class="badge badge-{{ $msg->status }} px-2.5 py-1 text-[10px]">{{ $msg->statusLabel() }}</span>
+                                <div class="mt-1">@include('outreach.partials.reply-category', ['message' => $msg])</div>
+                                @if($msg->reply_excerpt)<div class="text-[10px] text-slate-500 mt-1 max-w-48 line-clamp-3" title="{{ $msg->reply_excerpt }}">“{{ $msg->reply_excerpt }}”</div>@endif
+                            </td>
                             <td class="text-[10px] text-slate-500 whitespace-nowrap">
-                                @if($msg->replied_at)Dibalas {{ $msg->replied_at->format('d M H:i') }}<br>@endif
-                                @if($msg->sent_at)Terkirim {{ $msg->sent_at->format('d M H:i') }}@else Dibuat {{ $msg->created_at->format('d M H:i') }}@endif
+                                @if($msg->replied_at)Dibalas {{ $msg->replied_at->translatedFormat('d M H:i') }}<br>@endif
+                                @if($msg->sent_at)Terkirim {{ $msg->sent_at->translatedFormat('d M H:i') }}@else Dibuat {{ $msg->created_at->translatedFormat('d M H:i') }}@endif
                             </td>
                         </tr>
                     @empty
