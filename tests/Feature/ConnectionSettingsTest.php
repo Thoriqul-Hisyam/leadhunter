@@ -109,6 +109,11 @@ test('a test email can be sent from the settings page', function () {
     config(['mail.default' => 'smtp', 'mail.from.address' => 'saya@gmail.com']);
 
     $this->post(route('settings.test-mail'))->assertSessionHas('success', fn ($m) => str_contains($m, 'saya@gmail.com'));
+
+    // Sama dengan email ke client: template outreach bermerek, bukan teks polos
+    Mail::assertSent(\App\Mail\OutreachMail::class, fn ($mail) => $mail->hasTo('saya@gmail.com')
+        && str_contains($mail->render(), 'Halo tim Klinik Gigi Senyum')
+        && $mail->headers()->text['List-Unsubscribe'] === '<mailto:saya@gmail.com?subject=unsubscribe>');
 });
 
 test('https app urls force https links without crashing on boot', function () {

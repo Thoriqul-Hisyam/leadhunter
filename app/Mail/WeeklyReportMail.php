@@ -25,6 +25,6 @@ class WeeklyReportMail extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'emails.weekly-report');
+        return new Content(view: 'emails.weekly-report', with: ['brand' => EmailBrand::fromSettings()]);
     }
 }

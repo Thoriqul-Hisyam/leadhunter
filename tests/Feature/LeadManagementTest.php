@@ -108,6 +108,20 @@ test('settings drive the sender identity used everywhere', function () {
     $this->get(route('outreach.index'))->assertSee('value="Budi dari Webku"', false)->assertSee('value="Jasa SEO"', false);
 });
 
+test('the email logo url is validated and the email preview shows the current identity', function () {
+    $identity = ['sender_name' => 'Budi', 'company_name' => 'Webku', 'default_offer' => 'Jasa SEO', 'followup_days' => 3];
+
+    $this->put(route('settings.update'), $identity + ['company_logo_url' => 'javascript:alert(1)'])->assertSessionHasErrors('company_logo_url');
+    $this->put(route('settings.update'), $identity + ['company_logo_url' => 'https://webku.id/logo.png'])->assertSessionHasNoErrors();
+
+    $this->get(route('settings.email-preview'))->assertOk()
+        ->assertSee('src="https://webku.id/logo.png"', false)
+        ->assertSee('Budi dari Webku');
+
+    loginAs('user');
+    $this->get(route('settings.email-preview'))->assertForbidden();
+});
+
 test('the blacklist can be managed from settings', function () {
     $this->post(route('blacklist.store'), ['type' => 'phone', 'value' => '0812-3456-789'])->assertRedirect();
     $this->post(route('blacklist.store'), ['type' => 'email', 'value' => 'bukan-email'])->assertSessionHasErrors('value');

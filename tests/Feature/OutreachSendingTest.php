@@ -6,6 +6,7 @@ use App\Models\BlacklistEntry;
 use App\Models\Campaign;
 use App\Models\Lead;
 use App\Models\OutreachMessage;
+use App\Models\Setting;
 use App\Services\OutreachSender;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
@@ -220,6 +221,40 @@ test('public installs include a signed one-click unsubscribe link', function () 
 
     Mail::assertSent(OutreachMail::class, fn ($mail) => str_starts_with($mail->unsubscribeUrl, 'https://leadhunter.example.com/unsubscribe/')
         && $mail->headers()->text['List-Unsubscribe-Post'] === 'List-Unsubscribe=One-Click');
+});
+
+test('outreach emails use the company brand, escape the message and include a plain-text part', function () {
+    Mail::fake();
+    Setting::put(['company_name' => 'Lefateach', 'company_website' => 'lefateach.com', 'company_phone' => '0895-3655-00805', 'company_logo_url' => 'https://lefateach.com/images/logo.png']);
+    $message = outreachMessage(['message' => "Halo <b>Cafe</b>,\n\nParagraf kedua."]);
+
+    $this->postJson(route('outreach.send', $message))->assertOk();
+
+    Mail::assertSent(OutreachMail::class, function ($mail) {
+        $html = $mail->render();
+        $content = $mail->content();
+        $text = view($content->text, $content->with)->render();
+
+        return str_contains($html, 'src="https://lefateach.com/images/logo.png"')
+            // orb kaca disematkan sebagai gambar inline (CID → data URI saat render): 2 di header, 1 di footer
+            && substr_count($html, 'src="data:image/png;base64,') === 3
+            && str_contains($html, 'href="https://wa.me/62895365500805"')
+            && str_contains($html, 'Halo &lt;b&gt;Cafe&lt;/b&gt;,</p>')
+            && ! str_contains($html, '<b>Cafe</b>')
+            && str_contains($text, 'Halo <b>Cafe</b>,')
+            && str_contains($text, 'Website: https://lefateach.com')
+            && str_contains($text, 'Balas email ini dengan kata BERHENTI');
+    });
+});
+
+test('an office phone number is shown as a phone link without a WhatsApp button', function () {
+    Mail::fake();
+    Setting::put(['company_name' => 'Webku', 'company_phone' => '(031) 5964600']);
+
+    $this->postJson(route('outreach.send', outreachMessage()))->assertOk();
+
+    Mail::assertSent(OutreachMail::class, fn ($mail) => str_contains($mail->render(), 'href="tel:0315964600"')
+        && ! str_contains($mail->render(), 'wa.me'));
 });
 
 test('the composer previews all leads with parallel AI calls and falls back per lead', function () {

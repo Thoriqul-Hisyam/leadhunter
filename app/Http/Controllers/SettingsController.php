@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\AiException;
 use App\Helpers\Phone;
+use App\Mail\OutreachMail;
 use App\Services\WhatsApp\WhatsAppManager;
 use App\Models\AiUsageLog;
 use App\Models\BlacklistEntry;
@@ -86,6 +87,7 @@ class SettingsController extends Controller
             'company_website' => 'nullable|string|max:255',
             'company_phone' => 'nullable|string|max:50',
             'company_tagline' => 'nullable|string|max:150',
+            'company_logo_url' => 'nullable|url:http,https|max:255',
             'default_offer' => 'required|string|max:255',
             'followup_days' => 'required|integer|min:1|max:60',
         ]);
@@ -254,6 +256,17 @@ class SettingsController extends Controller
             ->with('success', "IMAP terhubung: {$count} email masuk dalam 3 hari terakhir terbaca.".(config('leadhunter.imap.enabled') ? '' : ' Centang "Deteksi balasan otomatis" lalu simpan untuk mengaktifkannya.'));
     }
 
+    /**
+     * Contoh tampilan email outreach dengan identitas usaha saat ini (tanpa mengirim apa pun).
+     */
+    public function emailPreview()
+    {
+        return response($this->sampleOutreachMail('Website untuk Klinik Gigi Senyum')->render());
+    }
+
+    /**
+     * Email tes memakai template yang sama dengan email ke client, jadi tampilannya bisa dicek di inbox sungguhan.
+     */
     public function testMail(Request $request, OutreachSender $sender)
     {
         $to = config('mail.from.address') && config('mail.from.address') !== 'hello@example.com'
@@ -261,23 +274,34 @@ class SettingsController extends Controller
             : $request->user()->email;
 
         try {
-            Mail::raw(
-                "Ini email tes dari LeadHunter AI.\n\nJika email ini sampai di inbox, pengaturan SMTP sudah benar dan outreach email siap dikirim.",
-                fn ($message) => $message->to($to)->subject('Tes email LeadHunter AI')
-            );
+            Mail::to($to)->send($this->sampleOutreachMail('Tes email LeadHunter AI: contoh tampilan outreach', $sender->unsubscribeMailto()));
         } catch (Throwable $e) {
             return redirect()->to(route('settings.edit').'#koneksi')->with('error', 'Tes email gagal: '.Str::limit($e->getMessage(), 300));
         }
 
         $message = $sender->isFakeMailer()
             ? "Mode kirim masih \"log\": email tes hanya ditulis ke storage/logs/laravel.log. Pilih mode SMTP untuk mengirim sungguhan."
-            : "Email tes terkirim ke {$to}. Cek inbox (atau folder spam).";
+            : "Email tes terkirim ke {$to} dengan tampilan yang sama seperti email ke client. Cek inbox (atau folder spam).";
 
         if (! $sender->isFakeMailer()) {
             Setting::put(['mail_tested_at' => now()->toDateTimeString()]);
         }
 
         return redirect()->to(route('settings.edit').'#koneksi')->with($sender->isFakeMailer() ? 'error' : 'success', $message);
+    }
+
+    /**
+     * Contoh email outreach dengan identitas usaha saat ini, dipakai pratinjau dan email tes.
+     */
+    protected function sampleOutreachMail(string $subject, ?string $unsubscribeMailto = null): OutreachMail
+    {
+        $offer = Setting::defaultOffer();
+        $message = "Halo tim Klinik Gigi Senyum,\n\n"
+            ."Saya lihat Klinik Gigi Senyum punya rating 4,8 dari 320 ulasan di Google Maps. Sayangnya saya belum menemukan website resminya, padahal banyak pasien baru mencari klinik lewat Google.\n\n"
+            ."Kami membantu usaha seperti Anda lewat {$offer}. Kalau berkenan, saya kirimkan contoh desain untuk klinik Anda, gratis.\n\n"
+            ."Salam,\n".Setting::senderIdentity();
+
+        return new OutreachMail($subject, $message, unsubscribeMailto: $unsubscribeMailto);
     }
 
     public function storeBlacklist(Request $request)

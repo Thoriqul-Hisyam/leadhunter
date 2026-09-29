@@ -24,6 +24,7 @@ class Setting extends Model
         'company_website' => '',
         'company_phone' => '',
         'company_tagline' => '',
+        'company_logo_url' => '',
         'default_offer' => 'Jasa Pembuatan Website Profesional',
         'followup_enabled' => '0',
         'followup_days' => '3',

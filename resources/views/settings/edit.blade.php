@@ -45,8 +45,13 @@
                         <input type="text" id="company_phone" name="company_phone" value="{{ old('company_phone', $settings['company_phone']) }}" class="form-input text-xs" placeholder="0895-...">
                     </div>
                     <div class="md:col-span-2">
-                        <label for="company_tagline" class="form-label text-xs">Tagline (header email)</label>
+                        <label for="company_tagline" class="form-label text-xs">Tagline (label di email)</label>
                         <input type="text" id="company_tagline" name="company_tagline" value="{{ old('company_tagline', $settings['company_tagline']) }}" class="form-input text-xs" placeholder="#1 Jasa Website di Indonesia">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="company_logo_url" class="form-label text-xs">URL logo (header email)</label>
+                        <input type="url" id="company_logo_url" name="company_logo_url" value="{{ old('company_logo_url', $settings['company_logo_url']) }}" class="form-input text-xs" placeholder="https://lefateach.com/images/logo.png">
+                        <p class="text-[10px] text-slate-500 mt-1">Gambar PNG yang bisa diakses publik, sebaiknya latar transparan. Kosong = inisial nama usaha. <a href="{{ route('settings.email-preview') }}" target="_blank" class="font-semibold text-indigo-600 hover:underline">Lihat contoh email →</a></p>
                     </div>
                 </div>
                 <p class="text-[10px] text-slate-500 mt-2">Tampil sebagai: <strong>{{ \App\Models\Setting::senderIdentity() }}</strong> (placeholder <code>@{{sender_name}}</code>).</p>

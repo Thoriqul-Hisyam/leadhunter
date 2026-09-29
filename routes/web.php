@@ -122,6 +122,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:manage_settings')->group(function () {
         Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::get('settings/email-preview', [SettingsController::class, 'emailPreview'])->name('settings.email-preview');
         Route::put('settings/connections', [SettingsController::class, 'updateConnections'])->name('settings.connections');
         Route::put('settings/sending', [SettingsController::class, 'updateSending'])->name('settings.sending');
         Route::post('settings/test-whatsapp', [SettingsController::class, 'testWhatsApp'])->name('settings.test-whatsapp')->middleware('throttle:5,1');

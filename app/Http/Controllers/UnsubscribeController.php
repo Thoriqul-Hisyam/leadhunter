@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\EmailBrand;
 use App\Models\BlacklistEntry;
 use App\Models\OutreachMessage;
-use App\Models\Setting;
 
 /**
  * Link "Berhenti berlangganan" di email outreach (URL bertanda tangan, tanpa login).
@@ -36,7 +36,7 @@ class UnsubscribeController extends Controller
 
         return view('unsubscribe', [
             'email' => $email,
-            'companyName' => Setting::get('company_name') ?: config('app.name'),
+            'brand' => EmailBrand::fromSettings(),
         ]);
     }
 }

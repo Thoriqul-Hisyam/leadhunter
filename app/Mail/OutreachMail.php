@@ -2,7 +2,6 @@
 
 namespace App\Mail;
 
-use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -59,17 +58,13 @@ class OutreachMail extends Mailable
 
     public function content(): Content
     {
-        $settings = Setting::values();
-
         return new Content(
             view: 'emails.outreach',
+            text: 'emails.outreach-text',
             with: [
                 'messageText' => $this->messageText,
                 'unsubscribeUrl' => $this->unsubscribeUrl,
-                'companyName' => $settings['company_name'],
-                'companyTagline' => $settings['company_tagline'],
-                'companyPhone' => $settings['company_phone'],
-                'companyWebsite' => $settings['company_website'],
+                'brand' => EmailBrand::fromSettings(),
             ],
         );
     }

@@ -92,6 +92,8 @@ simple, cepat selesai, dan langsung usable.
 
 ## Email & WhatsApp
 - Gmail SMTP (App Password). Mode `log` berarti email hanya ditulis ke log.
+- Tampilan email (outreach, laporan mingguan) dan halaman unsubscribe memakai layout `resources/views/emails/layouts/brand.blade.php`, bergaya website perusahaan (lefateach.com). Palet & font di `App\Mail\EmailBrand`, identitas (nama, tagline, logo, telepon, website) dari Pengaturan. Style inline + tabel; email outreach juga punya bagian text/plain (`emails/outreach-text`). Pratinjau: `settings/email-preview`.
+- Orb kaca 3D di email adalah PNG transparan (`public/images/email/orb-*.png`, `EmailBrand::ORBS`) yang disematkan sebagai gambar inline (CID) lewat `$message->embed()` di layout, karena klien email membuang blur/backdrop-filter/animasi. Halaman unsubscribe (browser) memakai CSS glass morphism asli.
 - WhatsApp lewat `App\Services\WhatsApp\WhatsAppManager` (driver `manual`, `fonnte`, `wablas`). Kirim otomatis hanya ke nomor seluler (`leads.phone_is_mobile`) kecuali nomor kantor diizinkan.
 
 ## Scraping
@@ -185,7 +187,7 @@ app/
 │   ├── Controllers/      # termasuk QueueController, WhatsAppWebhookController, Auth/PasswordResetController
 │   └── Middleware/
 ├── Jobs/                 # ScrapeGoogleMaps, GenerateOutreach, SendOutreach, EnrichLead, ClassifyReply, Heartbeat
-├── Mail/                 # OutreachMail, WeeklyReportMail
+├── Mail/                 # OutreachMail, WeeklyReportMail, EmailBrand (palet & identitas email)
 ├── Models/               # + CampaignStep, AiUsageLog, Concerns/RecordsCreator
 ├── Providers/            # Gate RBAC, RuntimeConfig, heartbeat queue
 └── Services/
