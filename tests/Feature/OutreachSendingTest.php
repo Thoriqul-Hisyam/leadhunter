@@ -126,6 +126,30 @@ test('bulk send queues emails with increasing random gaps and skips non-emails',
         ->and($gap2)->toBeGreaterThanOrEqual(60)->toBeLessThanOrEqual(120);
 });
 
+test('bulk actions can be limited to email only or whatsapp only', function () {
+    $email = outreachMessage();
+    $wa = outreachMessage(['type' => 'whatsapp']);
+    $ids = [$email->id, $wa->id];
+
+    $this->post(route('outreach.bulk'), ['ids' => $ids, 'action' => 'status_failed', 'channel' => 'whatsapp'])
+        ->assertSessionHas('success', fn ($msg) => str_contains($msg, '1 pesan WhatsApp ditandai sebagai') && str_contains($msg, '1 pesan kanal lain tidak diubah'));
+    expect($wa->fresh()->status)->toBe('failed')->and($email->fresh()->status)->toBe('pending');
+
+    // Kirim email saja: pesan WhatsApp yang ikut dipilih tidak diantrekan dan tidak dihitung "dilewati"
+    $this->post(route('outreach.bulk'), ['ids' => $ids, 'action' => 'send_queue', 'channel' => 'email'])
+        ->assertSessionHas('success', fn ($msg) => str_contains($msg, '1 email (maks.') && ! str_contains($msg, 'dilewati'));
+    expect($email->fresh()->status)->toBe('queued')->and($wa->fresh()->status)->toBe('failed');
+
+    $this->get(route('outreach.index'))->assertOk()->assertSee('1 email (maks.')->assertSee('Email saja');
+
+    $this->post(route('outreach.bulk'), ['ids' => [$email->id], 'action' => 'delete', 'channel' => 'whatsapp'])
+        ->assertSessionHas('error', 'Tidak ada pesan WhatsApp di antara yang dipilih.');
+    $this->post(route('outreach.bulk'), ['ids' => $ids, 'action' => 'delete', 'channel' => 'whatsapp']);
+    expect(OutreachMessage::find($wa->id))->toBeNull()->and(OutreachMessage::find($email->id))->not->toBeNull();
+
+    $this->post(route('outreach.bulk'), ['ids' => $ids, 'action' => 'delete', 'channel' => 'sms'])->assertSessionHasErrors('channel');
+});
+
 test('the scheduler dispatches due emails one per run within the hourly limit', function () {
     Queue::fake();
     config(['leadhunter.sending.hourly_limit' => 3]);

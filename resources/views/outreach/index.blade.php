@@ -176,13 +176,22 @@
             </div>
         </div>
         
-        <form action="{{ route('outreach.bulk') }}" method="POST" id="bulkOutreachForm" class="flex gap-2 items-center w-full sm:w-auto" onsubmit="return handleConfirm(event, this, 'Jalankan Aksi Massal?', 'Yakin ingin menjalankan aksi ini untuk semua pesan yang dipilih?', 'Ya, Jalankan')">
+        <form action="{{ route('outreach.bulk') }}" method="POST" id="bulkOutreachForm" class="flex flex-wrap sm:flex-nowrap gap-2 items-center w-full sm:w-auto" onsubmit="return confirmOutreachBulk(event, this)">
             @csrf
-            <x-searchable-select name="action" 
-                required="true" 
-                placeholder="Aksi massal" 
+            <x-searchable-select name="channel"
+                required="true"
+                :selected="in_array(request('type'), ['email', 'whatsapp'], true) ? request('type') : 'all'"
                 :options="[
-                    'send_queue' => 'Kirim via Antrean (email & WhatsApp)',
+                    'all' => 'Semua kanal',
+                    'email' => 'Email saja',
+                    'whatsapp' => 'WhatsApp saja',
+                ]"
+                triggerClass="form-select text-xs w-full sm:w-36 !py-1.5 !rounded-lg" />
+            <x-searchable-select name="action"
+                required="true"
+                placeholder="Aksi massal"
+                :options="[
+                    'send_queue' => 'Kirim via Antrean',
                     'delete' => 'Hapus yang Dipilih',
                     'status_pending' => 'Tandai sebagai Draft (batalkan antrean)',
                     'status_sent' => 'Tandai sebagai Terkirim',
@@ -191,7 +200,7 @@
                 ]"
                 triggerClass="form-select text-xs w-full sm:w-48 !py-1.5 !rounded-lg" />
             <button type="submit" class="btn-secondary py-1.5 px-4 text-xs font-bold">Terapkan</button>
-            <a href="{{ route('outreach.export', request()->only(['status', 'campaign_id'])) }}" class="btn-secondary py-1.5 px-3 text-xs font-bold whitespace-nowrap" title="Export hasil outreach ke CSV"><x-icon name="download" class="w-3.5 h-3.5" /> CSV</a>
+            <a href="{{ route('outreach.export', request()->only(['status', 'type', 'campaign_id'])) }}" class="btn-secondary py-1.5 px-3 text-xs font-bold whitespace-nowrap" title="Export hasil outreach ke CSV"><x-icon name="download" class="w-3.5 h-3.5" /> CSV</a>
         </form>
     </div>
 
@@ -201,6 +210,16 @@
         <a href="{{ route('outreach.index', request()->except(['status', 'page'])) }}" class="px-3 py-1 rounded-full text-[11px] font-bold border transition {{ !$currentStatus ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-600' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400' }}">Semua</a>
         @foreach(['pending' => 'Draft', 'queued' => 'Antre', 'sent' => 'Terkirim', 'replied' => 'Dibalas', 'failed' => 'Gagal'] as $value => $label)
             <a href="{{ route('outreach.index', array_merge(request()->except('page'), ['status' => $value])) }}" class="px-3 py-1 rounded-full text-[11px] font-bold border transition {{ $currentStatus === $value ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-600' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400' }}">{{ $label }}</a>
+        @endforeach
+
+        {{-- Filter kanal: tampilkan satu kanal lalu centang semua untuk aksi massal khusus email / WhatsApp --}}
+        @php $currentType = in_array(request('type'), ['email', 'whatsapp'], true) ? request('type') : null; @endphp
+        <span class="hidden sm:block w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1"></span>
+        @foreach([null => 'Semua kanal', 'email' => 'Email', 'whatsapp' => 'WhatsApp'] as $value => $label)
+            <a href="{{ route('outreach.index', array_merge(request()->except(['type', 'page']), $value ? ['type' => $value] : [])) }}" class="px-3 py-1 rounded-full text-[11px] font-bold border transition inline-flex items-center gap-1 {{ $currentType === ($value ?: null) ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-600' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400' }}">
+                @if($value === 'email')<x-icon name="envelope" class="w-3 h-3" />@elseif($value === 'whatsapp')<x-icon name="chat" class="w-3 h-3" />@endif
+                {{ $label }}
+            </a>
         @endforeach
     </div>
 
@@ -212,7 +231,10 @@
 
     @if($queuedCount > 0)
         <div class="mb-5 p-3 rounded-xl border border-violet-500/20 bg-violet-500/5 text-xs text-violet-700 dark:text-violet-300 font-semibold">
-            <x-icon name="clock" class="w-4 h-4 inline-block align-[-3px] mr-1" />{{ $queuedCount }} email di antrean kirim (maks. {{ config('leadhunter.sending.hourly_limit') }}/jam). Antrean diproses oleh scheduler; pastikan <code>composer run dev</code> (atau <code>php artisan schedule:work</code> + queue worker) berjalan.
+            <x-icon name="clock" class="w-4 h-4 inline-block align-[-3px] mr-1" />{{ collect([
+                'email' => 'email (maks. '.config('leadhunter.sending.hourly_limit').'/jam)',
+                'whatsapp' => 'WhatsApp (maks. '.config('leadhunter.whatsapp.hourly_limit').'/jam)',
+            ])->filter(fn ($label, $type) => ($queuedByChannel[$type] ?? 0) > 0)->map(fn ($label, $type) => $queuedByChannel[$type].' '.$label)->implode(' dan ') }} di antrean kirim. Antrean diproses oleh scheduler; pastikan <code>composer run dev</code> (atau <code>php artisan schedule:work</code> + queue worker) berjalan.
         </div>
     @endif
 
@@ -1203,5 +1225,13 @@
             });
         });
     }
+
+    // Konfirmasi aksi massal, menyebut kanal jika aksi dibatasi ke email / WhatsApp saja
+    window.confirmOutreachBulk = function (event, form) {
+        const scope = { email: ' email', whatsapp: ' WhatsApp' }[form.elements.channel?.value] || '';
+        const note = scope ? ` Pesan kanal lain yang ikut dipilih tidak diubah.` : '';
+
+        return handleConfirm(event, form, 'Jalankan Aksi Massal?', `Yakin ingin menjalankan aksi ini untuk pesan${scope} yang dipilih?${note}`, 'Ya, Jalankan');
+    };
 </script>
 @endsection

@@ -40,11 +40,12 @@ class OutreachController extends Controller
         $totalLeads = Lead::count();
         $senderName = Setting::senderIdentity();
         $defaultOffer = Setting::defaultOffer();
-        $queuedCount = OutreachMessage::where('status', 'queued')->count();
+        $queuedByChannel = OutreachMessage::where('status', 'queued')->selectRaw('type, count(*) as total')->groupBy('type')->pluck('total', 'type');
+        $queuedCount = (int) $queuedByChannel->sum();
         $fakeMailer = app(OutreachSender::class)->isFakeMailer();
         $waGatewayActive = app(OutreachSender::class)->whatsAppGatewayActive();
 
-        return view('outreach.index', compact('messages', 'campaigns', 'leadNiches', 'leadCities', 'totalLeads', 'senderName', 'defaultOffer', 'queuedCount', 'fakeMailer', 'waGatewayActive'));
+        return view('outreach.index', compact('messages', 'campaigns', 'leadNiches', 'leadCities', 'totalLeads', 'senderName', 'defaultOffer', 'queuedCount', 'queuedByChannel', 'fakeMailer', 'waGatewayActive'));
     }
 
     /**
@@ -186,23 +187,38 @@ class OutreachController extends Controller
             'ids' => 'required|array',
             'ids.*' => 'exists:outreach_messages,id',
             'action' => 'required|in:delete,send_queue,status_pending,status_sent,status_replied,status_failed',
+            'channel' => 'nullable|in:all,email,whatsapp',
         ]);
 
-        $messages = OutreachMessage::with('lead')->whereIn('id', $request->ids)->get();
+        // Aksi bisa dibatasi ke satu kanal: pesan terpilih dari kanal lain tidak disentuh.
+        $channel = in_array($request->channel, ['email', 'whatsapp'], true) ? $request->channel : null;
+        $selected = OutreachMessage::with('lead')->whereIn('id', $request->ids)->get();
+        $messages = $channel ? $selected->where('type', $channel)->values() : $selected;
+        $otherChannel = $selected->count() - $messages->count();
+        $note = $otherChannel ? " {$otherChannel} pesan kanal lain tidak diubah." : '';
+        $scope = match ($channel) {
+            'email' => ' email',
+            'whatsapp' => ' WhatsApp',
+            default => '',
+        };
+
+        if ($messages->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada pesan'.$scope.' di antara yang dipilih.');
+        }
 
         if ($request->action === 'delete') {
-            OutreachMessage::whereIn('id', $request->ids)->delete();
+            OutreachMessage::whereIn('id', $messages->modelKeys())->delete();
 
-            return redirect()->back()->with('success', count($request->ids).' pesan outreach dihapus.');
+            return redirect()->back()->with('success', $messages->count().' pesan'.$scope.' dihapus.'.$note);
         }
 
         if ($request->action === 'send_queue') {
             $result = $sender->queue($messages);
             $parts = [];
-            foreach (['email' => 'email', 'whatsapp' => 'WhatsApp'] as $channel => $label) {
-                if ($result['by_channel'][$channel] > 0) {
-                    $limits = $sender->limits($channel);
-                    $parts[] = "{$result['by_channel'][$channel]} {$label} (maks. {$limits['hourly']}/jam, {$limits['daily']}/hari)";
+            foreach (['email' => 'email', 'whatsapp' => 'WhatsApp'] as $type => $label) {
+                if ($result['by_channel'][$type] > 0) {
+                    $limits = $sender->limits($type);
+                    $parts[] = "{$result['by_channel'][$type]} {$label} (maks. {$limits['hourly']}/jam, {$limits['daily']}/hari)";
                 }
             }
             $message = $parts
@@ -215,13 +231,13 @@ class OutreachController extends Controller
                 $message .= " {$result['skipped']} dilewati (sudah terkirim, perlu review, tidak ada kontak yang cocok, nomor kantor, atau WhatsApp gateway belum aktif).";
             }
 
-            return redirect()->back()->with('success', $message);
+            return redirect()->back()->with('success', $message.$note);
         }
 
         $status = str_replace('status_', '', $request->action);
         $messages->each->setStatus($status);
 
-        return redirect()->back()->with('success', $messages->count().' pesan ditandai sebagai '.OutreachMessage::statusLabelFor($status).'.');
+        return redirect()->back()->with('success', $messages->count().' pesan'.$scope.' ditandai sebagai '.OutreachMessage::statusLabelFor($status).'.'.$note);
     }
 
     public function getTemplates(Request $request)

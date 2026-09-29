@@ -61,6 +61,9 @@ class CsvController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
+        if (in_array($request->type, ['email', 'whatsapp'], true)) {
+            $query->where('type', $request->type);
+        }
 
         return $this->stream('outreach-'.now()->format('Ymd-His').'.csv', $columns, function ($out) use ($query) {
             $query->chunk(500, function ($messages) use ($out) {
