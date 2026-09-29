@@ -34,10 +34,28 @@
         @endforeach
     </div>
 
-    @if(collect($health)->contains(fn ($c) => ! $c['healthy']))
+    @php $down = collect($health)->reject(fn ($c) => $c['healthy']); @endphp
+    @if($down->isNotEmpty())
         <div class="dash-card border border-amber-500/30">
             <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-2">Cara menjalankan</h3>
-            <p class="text-xs text-slate-600 dark:text-slate-300">Lokal: jalankan <code>composer run dev</code> (server, dua queue worker, scheduler, dan Vite sekaligus). Server: lihat bagian Supervisor dan cron di <code>docs/deployment.md</code>.</p>
+            @if(app()->isLocal())
+                <p class="text-xs text-slate-600 dark:text-slate-300">Jalankan <code>composer run dev</code> (server, dua queue worker, scheduler, dan Vite sekaligus).</p>
+            @else
+                <p class="text-xs text-slate-600 dark:text-slate-300 mb-3">Di server setiap proses berjalan sendiri. Nyalakan yang mati:</p>
+                <ul class="space-y-2.5">
+                    @foreach($down as $name => $component)
+                        @php $hint = \App\Services\SystemHealth::runHint($name); @endphp
+                        <li class="text-xs text-slate-600 dark:text-slate-300">
+                            <strong class="text-slate-800 dark:text-slate-100">{{ $component['label'] }}</strong> lewat {{ $hint['via'] }}:
+                            <code class="block mt-1 p-2 rounded-lg bg-slate-100 dark:bg-slate-800 break-all select-all">{{ $hint['command'] }}</code>
+                        </li>
+                    @endforeach
+                </ul>
+                @if($down->has('scheduler') && $down->count() > 1)
+                    <p class="text-[11px] text-slate-500 mt-3">Job detak untuk worker dikirim oleh scheduler, jadi selama cron mati worker yang menganggur bisa ikut tampak mati. Nyalakan cron dulu, lalu cek lagi setelah 1–2 menit.</p>
+                @endif
+                <p class="text-[11px] text-slate-500 mt-3">Supervisor: cek dengan <code>sudo supervisorctl status</code>. Setelah deploy kode baru: <code>php artisan queue:restart</code>. Contoh konfigurasi lengkap ada di <code>docs/deployment.md</code>.</p>
+            @endif
         </div>
     @endif
 

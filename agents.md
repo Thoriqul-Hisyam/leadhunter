@@ -76,6 +76,7 @@ simple, cepat selesai, dan langsung usable.
 - Queue driver `database`, dua antrean: `default` (AI, kirim email/WA, audit website, klasifikasi balasan) dan `scraping` (scraping & crawl, job panjang)
 - Scheduler (`routes/console.php`): heartbeat, kirim antrean, retry, sequence follow-up, cek reply, laporan mingguan, cleanup
 - `SystemHealth` mencatat heartbeat scheduler & tiap queue; layout menampilkan banner jika > 3 menit tidak ada tanda hidup
+- Petunjuk "cara menyalakan" di UI wajib lewat `SystemHealth::runHint()` / `<x-run-hint>`: `composer run dev` hanya saat `APP_ENV=local`; di server tiap proses berdiri sendiri (cron `schedule:run`, Supervisor `queue:work`). Jangan menulis "jalankan composer run dev" langsung di view.
 - Timezone aplikasi `Asia/Jakarta` (`APP_TIMEZONE`), locale `id`
 
 ## Pengaturan runtime

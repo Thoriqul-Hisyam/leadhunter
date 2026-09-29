@@ -83,7 +83,11 @@
             <div id="generation-progress-bar" class="h-full bg-linear-to-r from-indigo-500 to-purple-500 transition-all duration-500"
                  style="width: {{ $campaign->generation_total ? round(($campaign->generation_done + $campaign->generation_failed) / $campaign->generation_total * 100) : 0 }}%"></div>
         </div>
-        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-2">Halaman akan dimuat ulang otomatis saat selesai. Pastikan queue worker berjalan (<code>composer run dev</code>).</p>
+        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-2">Halaman akan dimuat ulang otomatis saat selesai.
+            @if(array_key_exists('queue:default', \App\Services\SystemHealth::unhealthy()))
+                <span class="text-amber-700 dark:text-amber-300">Queue worker "default" tidak berjalan, pesan tidak akan ditulis. <x-run-hint :components="['queue:default']" /></span>
+            @endif
+        </p>
     </div>
 
     {{-- Dashboard Stats Grid --}}

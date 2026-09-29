@@ -228,11 +228,11 @@
     {{-- Main Content --}}
     <main class="flex-1 w-full max-w-400 mx-auto p-4 md:p-6 lg:p-8 pt-2">
         @auth
-            @php $systemProblems = \App\Services\SystemHealth::problems(); @endphp
+            @php $systemProblems = \App\Services\SystemHealth::unhealthy(); @endphp
             @if($systemProblems)
                 <div class="mb-5 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-xs text-amber-800 dark:text-amber-300">
                     <x-icon name="warning" class="w-4 h-4 shrink-0" />
-                    <span class="flex-1"><strong>{{ implode(', ', $systemProblems) }}</strong> tidak berjalan. Scraping, generate AI, dan pengiriman antrean tidak akan diproses. Jalankan <code>composer run dev</code>.</span>
+                    <span class="flex-1"><strong>{{ implode(', ', $systemProblems) }}</strong> tidak berjalan. Scraping, generate AI, dan pengiriman antrean tidak akan diproses. <x-run-hint :components="array_keys($systemProblems)" /></span>
                     @can('manage_settings')
                         <a href="{{ route('queue.index') }}" class="font-bold underline whitespace-nowrap">Lihat status</a>
                     @endcan

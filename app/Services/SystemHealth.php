@@ -71,11 +71,39 @@ class SystemHealth
      */
     public static function problems(): array
     {
+        return array_values(static::unhealthy());
+    }
+
+    /**
+     * @return array<string, string> komponen yang mati: nama (scheduler, queue:default, ...) => label
+     */
+    public static function unhealthy(): array
+    {
         return collect(static::status())
             ->reject(fn ($component) => $component['healthy'])
-            ->pluck('label')
-            ->values()
+            ->map(fn ($component) => $component['label'])
             ->all();
+    }
+
+    /**
+     * Cara menyalakan satu komponen. Lokal: semuanya lewat `composer run dev`. Server: setiap proses
+     * berdiri sendiri (worker lewat Supervisor, scheduler lewat cron), sama dengan docs/deployment.md.
+     *
+     * @return array{via: string, short: string, command: string}
+     */
+    public static function runHint(string $component): array
+    {
+        if (app()->isLocal()) {
+            return ['via' => 'lokal', 'short' => 'composer run dev', 'command' => 'composer run dev'];
+        }
+
+        $artisan = base_path('artisan');
+
+        return match ($component) {
+            'scheduler' => ['via' => 'cron', 'short' => 'schedule:run', 'command' => '* * * * * cd '.base_path().' && php artisan schedule:run >> /dev/null 2>&1'],
+            'queue:scraping' => ['via' => 'Supervisor', 'short' => 'queue:work --queue=scraping', 'command' => "php {$artisan} queue:work --queue=scraping --sleep=5 --tries=1 --timeout=900 --max-time=7200"],
+            default => ['via' => 'Supervisor', 'short' => 'queue:work --queue=default', 'command' => "php {$artisan} queue:work --queue=default --sleep=3 --tries=1 --timeout=300 --max-time=3600"],
+        };
     }
 
     protected static function isBusy(string $queue): bool

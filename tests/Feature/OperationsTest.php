@@ -54,6 +54,29 @@ test('the layout warns when the scheduler is not running', function () {
     $this->get(route('dashboard'))->assertDontSee('tidak berjalan. Scraping');
 });
 
+test('run instructions say composer run dev locally and point to cron or supervisor on a server', function () {
+    loginAs('admin');
+    config(['queue.default' => 'database']);
+    Cache::forget('heartbeat:scheduler');
+    SystemHealth::beatQueue('default');
+    Cache::forget('heartbeat:queue:scraping');
+
+    app()['env'] = 'local';
+    $this->get(route('dashboard'))->assertSee('composer run dev');
+
+    app()['env'] = 'production';
+    $this->get(route('dashboard'))->assertOk()
+        ->assertDontSee('composer run dev')
+        ->assertSee('cron <code>schedule:run</code>', false)
+        ->assertSee('Supervisor <code>queue:work --queue=scraping</code>', false)
+        ->assertDontSee('queue:work --queue=default');
+
+    $this->get(route('queue.index'))->assertOk()
+        ->assertDontSee('composer run dev')
+        ->assertSee('cd '.base_path().' &amp;&amp; php artisan schedule:run', false)
+        ->assertSee('queue:work --queue=scraping --sleep=5 --tries=1 --timeout=900');
+});
+
 test('failed jobs can be viewed, retried and forgotten from the queue page', function () {
     loginAs('admin');
     DB::table('failed_jobs')->insert([

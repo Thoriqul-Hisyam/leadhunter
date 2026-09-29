@@ -234,7 +234,11 @@
             <x-icon name="clock" class="w-4 h-4 inline-block align-[-3px] mr-1" />{{ collect([
                 'email' => 'email (maks. '.config('leadhunter.sending.hourly_limit').'/jam)',
                 'whatsapp' => 'WhatsApp (maks. '.config('leadhunter.whatsapp.hourly_limit').'/jam)',
-            ])->filter(fn ($label, $type) => ($queuedByChannel[$type] ?? 0) > 0)->map(fn ($label, $type) => $queuedByChannel[$type].' '.$label)->implode(' dan ') }} di antrean kirim. Antrean diproses oleh scheduler; pastikan <code>composer run dev</code> (atau <code>php artisan schedule:work</code> + queue worker) berjalan.
+            ])->filter(fn ($label, $type) => ($queuedByChannel[$type] ?? 0) > 0)->map(fn ($label, $type) => $queuedByChannel[$type].' '.$label)->implode(' dan ') }} di antrean kirim, diproses oleh scheduler dan queue worker "default".
+            @php $senderDown = array_intersect_key(\App\Services\SystemHealth::unhealthy(), array_flip(['scheduler', 'queue:default'])); @endphp
+            @if($senderDown)
+                <span class="text-amber-700 dark:text-amber-300"><strong>{{ implode(' dan ', $senderDown) }}</strong> tidak berjalan, antrean tertahan. <x-run-hint :components="array_keys($senderDown)" /></span>
+            @endif
         </div>
     @endif
 
